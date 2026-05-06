@@ -79,7 +79,7 @@ class StromgrenSphereSnapshot:
             r = self.analytical.get_analytical_radius_history_causal(np.asarray(time) * u.s)
             # r = self.analytical.r_s * (1 - np.exp(-time / t_rec))**(1/3)
             r = r.to(u.pc).value
-            plot.annotate_sphere(self.ds.domain_left_edge, radius=(r, "pc"), circle_args={"color": "white", "linewidth": 4})
+            plot.annotate_sphere(self.ds.domain_left_edge, radius=(r, "pc"), circle_args={"color": "black", "linewidth": 4, "linestyle": "dashed"})
             plot.annotate_text((0.05, 0.95), f"t = {time/t_rec:.2f} t_rec", coord_system="axis")
         if plot_front:
             r_med, r_low, r_high = self.get_front_radius(lb=front_lb, ub=front_ub)
@@ -87,6 +87,14 @@ class StromgrenSphereSnapshot:
             plot.annotate_sphere(self.ds.domain_left_edge, radius=(r_med, "pc"), circle_args={"color": "red", "linewidth": 2})
         plot.save(outpath)
         return outpath
+
+    def get_effective_radius(self):
+        ad = self.ad
+        x_HI = ad['x_HI']
+        volume = ad['cell_volume']
+        total_volume = np.sum(volume * (1 - x_HI))
+        r_effective = (3 * 8 * total_volume / (4 * np.pi))**(1/3)
+        return r_effective.to('pc')
 
     def create_radiation_map(self, vmin=None, vmax=None, cmap="viridis", redo=False, plot_analytical=False, nolog=False, plot_front=False, front_lb=0.01, front_ub=0.99):
         outpath = self.create_quantity_map("n_photon", vmin=vmin, vmax=vmax, cmap=cmap, redo=redo, plot_analytical=plot_analytical, nolog=nolog, plot_front=plot_front, front_lb=front_lb, front_ub=front_ub)

@@ -2,6 +2,8 @@ import os
 import re
 import numpy as np
 import yt
+import matplotlib.pyplot as pl
+from astropy import units as u
 
 from .util import create_movie
 from .StromgrenSphereSnapshot import StromgrenSphereSnapshot
@@ -88,3 +90,129 @@ class StromgrenSphere:
     def create_density_video(self, output_filename="density_evolution", fps=10, vmin=None, vmax=None, cmap="viridis", redo=False, plot_analytical=False, nolog=False, plot_front=False, front_lb=0.01, front_ub=0.99):
         density_plot_paths = self.create_density_plots(vmin=vmin, vmax=vmax, cmap=cmap, redo=redo, plot_analytical=plot_analytical, nolog=nolog, plot_front=plot_front, front_lb=front_lb, front_ub=front_ub)
         create_movie(density_plot_paths, self.outdir, output_filename, framerate=fps)
+
+    def get_radius_history(self, lb=0.01, ub=0.99):
+        """Get radius history data from snapshots.
+        
+        Returns:
+            t_arr: Time array in seconds
+            r_median: Median radius in pc
+            r_16th: 16th percentile radius in pc
+            r_84th: 84th percentile radius in pc
+        """
+        t_arr = np.array(self.time_list) * u.s
+        r_median, r_16th, r_84th = [], [], []
+        for snapshot in self.snapshot_list:
+            r_med, r_16, r_84 = snapshot.get_front_radius(lb=lb, ub=ub)
+            r_median.append(r_med)
+            r_16th.append(r_16)
+            r_84th.append(r_84)
+        r_median = np.array(r_median) * u.pc
+        r_16th = np.array(r_16th) * u.pc
+        r_84th = np.array(r_84th) * u.pc
+        return t_arr, r_median, r_16th, r_84th
+    
+    def plot_radius_history(self, plot_analytical=True, lb=0.01, ub=0.99, fig=None, ax=None, label=None):
+        """Plot radius history with optional analytical solution.
+        
+        Parameters:
+            plot_analytical: Whether to plot analytical solution
+            lb, ub: Lower and upper bounds for front radius calculation
+            fig, ax: Matplotlib figure and axis objects
+            label: Label for the plot
+        
+        Returns:
+            fig, ax: Matplotlib figure and axis objects
+        """
+        if fig is None:
+            fig, ax = pl.subplots()
+        t_arr, r_median, r_16th, r_84th = self.get_radius_history(lb=lb, ub=ub)
+        if self.analytical:
+            t_rec = self.analytical.t_rec
+        else:
+            t_rec = 1 * u.s
+        ax.plot(t_arr / t_rec, r_median, label=label)
+        ax.fill_between(t_arr / t_rec, r_16th.value, r_84th.value, alpha=0.3)
+        if plot_analytical and self.analytical is not None:
+            r_analytical = self.analytical.get_analytical_radius_history_causal(np.asarray(t_arr) * u.s)
+            ax.plot(t_arr / t_rec, r_analytical.to('pc').value, color='black', linestyle="--")
+        ax.set_xlabel("Time (s)")
+        ax.set_ylabel("Radius (pc)")
+        return fig, ax
+
+    def get_effective_radius_history(self):
+        """Get effective radius history data from snapshots.
+        
+        Returns:
+            t_arr: Time array in seconds
+            r_effective: Effective radius in pc
+            r_analytical: Analytical radius in pc (or None)
+        """
+        t_arr = np.array(self.time_list) * u.s
+        r_effective = np.array([snapshot.get_effective_radius() for snapshot in self.snapshot_list]) * u.pc
+        r_analytical = None
+        if self.analytical is not None:
+            r_analytical = self.analytical.get_analytical_radius_history_causal(np.asarray(t_arr) * u.s)
+        return t_arr, r_effective, r_analytical
+
+    def get_effective_radius_error_history(self):
+        """Get normalized effective-radius error history.
+        
+        Returns:
+            t_hat: Time array normalized by the recombination time
+            delta: Normalized error array, (r_effective - r_analytical) / dx
+        """
+        if self.analytical is None:
+            raise ValueError("Analytical solution is required to compute the effective radius error history")
+        t_arr, r_effective, r_analytical = self.get_effective_radius_history()
+        dx = self.snapshot_list[0].ds.index.get_smallest_dx().to('pc')
+        t_rec = self.analytical.t_rec.to(u.s)
+        t_hat = t_arr / t_rec
+        delta = ((r_effective - r_analytical).to('pc') / dx).value
+        return t_hat, delta
+    
+    def plot_effective_radius_history(self, plot_analytical=True, fig=None, ax=None, label=None):
+        """Plot effective radius history with optional analytical solution.
+        
+        Parameters:
+            plot_analytical: Whether to plot analytical solution
+            fig, ax: Matplotlib figure and axis objects
+            label: Label for the plot
+        
+        Returns:
+            fig, ax: Matplotlib figure and axis objects
+        """
+        if fig is None:
+            fig, ax = pl.subplots()
+        t_arr, r_effective, r_analytical = self.get_effective_radius_history()
+        t_rec = self.analytical.t_rec if self.analytical is not None else 1
+        ax.plot(t_arr/t_rec, r_effective, label=label)
+        if plot_analytical and r_analytical is not None:
+            ax.plot(t_arr/t_rec, r_analytical.to('pc').value, color='black', linestyle="--")
+        if self.analytical is not None:
+            ax.set_xlabel("t/t_rec")
+        else:
+            ax.set_xlabel("Time (s)")
+        ax.set_ylabel("r_effective (pc)")
+        return fig, ax
+
+    def plot_effective_radius_error_history(self, fig=None, ax=None, label=None):
+        """Plot normalized effective-radius error history.
+        
+        Parameters:
+            fig, ax: Matplotlib figure and axis objects
+            label: Label for the error curve
+
+        Returns:
+            fig, ax: Matplotlib figure and axis objects
+        """
+        if fig is None:
+            fig, ax = pl.subplots()
+        t_hat, delta = self.get_effective_radius_error_history()
+        ax.plot(t_hat, delta, label=label)
+        ax.axhline(-np.sqrt(3), color='black', linestyle='--')
+        ax.axhline(np.sqrt(3), color='black', linestyle='--')
+        ax.set_xlabel(r"$t/t_{\mathrm{rec}}$")
+        ax.set_ylabel(r"$\Delta \mathrm{r}/\mathrm{dx}$")
+        ax.legend()
+        return fig, ax
