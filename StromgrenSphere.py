@@ -91,6 +91,42 @@ class StromgrenSphere:
         density_plot_paths = self.create_density_plots(vmin=vmin, vmax=vmax, cmap=cmap, redo=redo, plot_analytical=plot_analytical, nolog=nolog, plot_front=plot_front, front_lb=front_lb, front_ub=front_ub)
         create_movie(density_plot_paths, self.outdir, output_filename, framerate=fps)
 
+    def get_normalized_effective_radius_history(self, lb=0.01, ub=0.99):
+        """Get normalized effective radius history data from snapshots.
+        
+        Returns:
+            t_hat: Time array normalized by the recombination time
+            r_hat: Effective radius array normalized by the Strömgren radius
+        """
+        if self.analytical is None:
+            raise ValueError("Analytical solution is required to compute the normalized effective radius history")
+        t_arr, r_effective, r_analytical = self.get_effective_radius_history()
+        t_rec = self.analytical.t_rec.to(u.s)
+        r_s = self.analytical.r_s.to(u.pc)
+        t_hat = t_arr / t_rec
+        r_hat = r_effective / r_s
+        return t_hat, r_hat
+
+    def plot_normalized_effective_radius_history(self, fig=None, ax=None, label=None):
+        """Plot normalized effective radius history.
+        
+        Parameters:
+            fig, ax: Matplotlib figure and axis objects
+            label: Label for the plot
+        
+        Returns:
+            fig, ax: Matplotlib figure and axis objects
+        """
+        if self.analytical is None:
+            raise ValueError("Analytical solution is required to plot the normalized effective radius history")
+        if fig is None:
+            fig, ax = pl.subplots()
+        t_hat, r_hat = self.get_normalized_effective_radius_history()
+        ax.plot(t_hat, r_hat, label=label)
+        ax.set_xlabel(r"$t/t_{\mathrm{rec}}$")
+        ax.set_ylabel(r"$r_{\mathrm{effective}}/r_{\mathrm{S}}$")
+        return fig, ax
+
     def get_radius_history(self, lb=0.01, ub=0.99):
         """Get radius history data from snapshots.
         
