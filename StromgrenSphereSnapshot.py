@@ -25,6 +25,40 @@ def x_HI(field, data):
     n_HII = data['scalar_2'] / Constants.m_HII
     return n_HI / (n_HI + n_HII)
 
+def temperature(field, data):
+    """
+    Calculate temperature from internal energy using the EOS formula.
+    Follows the prescription from actual_eos.H:
+    T = e_int * rho / (k_B * sum(n_i * f_i / 2))
+    
+    where f_i = 1 / (gamma_i - 1) for each species
+    """
+    # Get the total density
+    rho_total = data['gasDensity']
+    
+    # Get number densities
+    n_HI = data['scalar_1'] / Constants.m_HI
+    n_HII = data['scalar_2'] / Constants.m_HII
+    n_e = data['scalar_0'] / Constants.m_e
+    
+    e_int = data['gasInternalEnergy']
+    
+    # Calculate sum of n_i * f_i / 2, where f_i = 1 / (gamma_i - 1)
+    # For most species (monatomic ideal gas): gamma = 5/3, so f_i = 3/2
+    # Assuming all species have gamma = 5/3 (monatomic)
+    gamma = 5.0 / 3.0
+    gamma_HI, gamma_HII, gamma_e = gamma, gamma, gamma
+    
+    # Sum of number fractions weighted by degrees of freedom
+    n_total = n_HI + n_HII + n_e
+    sum_n_f_over_2 = (n_HI * (1 / (gamma_HI - 1)) + n_HII * (1 / (gamma_HII - 1)) + n_e * (1 / (gamma_e - 1)))
+    sum_n_f_over_2 /= n_total
+
+    # Calculate temperature
+    temp = e_int * rho_total / (Constants.k_B * sum_n_f_over_2)
+
+    return temp
+
 class StromgrenSphereSnapshot:
     def __init__(self, path, outdir=None, analytical=None):
         self.path = path
@@ -36,6 +70,7 @@ class StromgrenSphereSnapshot:
         self.ds.add_field(("boxlib", "n_HII"), function=HII_density, units="dimensionless", sampling_type="cell")
         self.ds.add_field(("boxlib", "n_photon"), function=photon_density, units="dimensionless", sampling_type="cell")
         self.ds.add_field(("boxlib", "x_HI"), function=x_HI, units="dimensionless", sampling_type="cell")
+        self.ds.add_field(("boxlib", "temperature"), function=temperature, units="dimensionless", sampling_type="cell")
         self.ad = self.ds.all_data()
         if self.outdir is None:
             self.outdir = os.path.join(self.path, "plots")
@@ -118,4 +153,8 @@ class StromgrenSphereSnapshot:
 
     def create_density_map(self, vmin=None, vmax=None, cmap="viridis", redo=False, plot_analytical=False, nolog=False, plot_front=False, front_lb=0.01, front_ub=0.99):
         outpath = self.create_quantity_map("gasDensity", vmin=vmin, vmax=vmax, cmap=cmap, redo=redo, plot_analytical=plot_analytical, nolog=nolog, plot_front=plot_front, front_lb=front_lb, front_ub=front_ub)
+        return outpath
+
+    def create_temperature_map(self, vmin=None, vmax=None, cmap="viridis", redo=False, plot_analytical=False, nolog=False, plot_front=False, front_lb=0.01, front_ub=0.99):
+        outpath = self.create_quantity_map("temperature", vmin=vmin, vmax=vmax, cmap=cmap, redo=redo, plot_analytical=plot_analytical, nolog=nolog, plot_front=plot_front, front_lb=front_lb, front_ub=front_ub)
         return outpath

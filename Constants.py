@@ -4,3 +4,4 @@ class Constants:
     hplanck = 6.62606957e-27
     m_HI = m_p + m_e
     m_HII = m_p
+    k_B = 1.3806488e-16
