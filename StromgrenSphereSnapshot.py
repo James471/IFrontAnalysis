@@ -29,12 +29,12 @@ def temperature(field, data):
     """
     Calculate temperature from internal energy using the EOS formula.
     Follows the prescription from actual_eos.H:
-    T = e_int * rho / (k_B * sum(n_i * f_i / 2))
-    
-    where f_i = 1 / (gamma_i - 1) for each species
-    """
+
     # Get the total density
     rho_total = data['gasDensity']
+    T = e_int / (k_B * sum(n_i * f_i / 2))
+    where f_i = 1 / (gamma_i - 1) for each species
+    """
     
     # Get number densities
     n_HI = data['scalar_1'] / Constants.m_HI
@@ -55,7 +55,7 @@ def temperature(field, data):
     sum_n_f_over_2 /= n_total
 
     # Calculate temperature
-    temp = e_int * rho_total / (Constants.k_B * sum_n_f_over_2)
+    temp = e_int / (Constants.k_B * sum_n_f_over_2)
 
     return temp
 
