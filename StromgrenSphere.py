@@ -73,6 +73,15 @@ class StromgrenSphere:
     
     def create_temperature_plots(self, vmin=None, vmax=None, cmap="viridis", redo=False, plot_analytical=False, nolog=False, plot_front=False, front_lb=0.01, front_ub=0.99):
         return self.create_quantity_plots("temperature", vmin=vmin, vmax=vmax, cmap=cmap, redo=redo, plot_analytical=plot_analytical, nolog=nolog, plot_front=plot_front, front_lb=front_lb, front_ub=front_ub)
+    
+    def create_velocity_plots(self, vmin=None, vmax=None, cmap="viridis", redo=False, plot_analytical=False, nolog=False, plot_front=False, front_lb=0.01, front_ub=0.99):
+        return self.create_quantity_plots("velocity", vmin=vmin, vmax=vmax, cmap=cmap, redo=redo, plot_analytical=plot_analytical, nolog=nolog, plot_front=plot_front, front_lb=front_lb, front_ub=front_ub)
+    
+    def create_cs_plots(self, vmin=None, vmax=None, cmap="viridis", redo=False, plot_analytical=False, nolog=False, plot_front=False, front_lb=0.01, front_ub=0.99):
+        return self.create_quantity_plots("cs", vmin=vmin, vmax=vmax, cmap=cmap, redo=redo, plot_analytical=plot_analytical, nolog=nolog, plot_front=plot_front, front_lb=front_lb, front_ub=front_ub)
+    
+    def create_pressure_plots(self, vmin=None, vmax=None, cmap="viridis", redo=False, plot_analytical=False, nolog=False, plot_front=False, front_lb=0.01, front_ub=0.99):
+        return self.create_quantity_plots("pressure", vmin=vmin, vmax=vmax, cmap=cmap, redo=redo, plot_analytical=plot_analytical, nolog=nolog, plot_front=plot_front, front_lb=front_lb, front_ub=front_ub)
 
     def create_radiation_video(self, output_filename="radiation_evolution", fps=10, vmin=None, vmax=None, cmap="viridis", redo=False, plot_analytical=False, nolog=False, plot_front=False, front_lb=0.01, front_ub=0.99):
         radiation_plot_paths = self.create_radiation_plots(vmin=vmin, vmax=vmax, cmap=cmap, redo=redo, plot_analytical=plot_analytical, nolog=nolog, plot_front=plot_front, front_lb=front_lb, front_ub=front_ub)
@@ -97,6 +106,18 @@ class StromgrenSphere:
     def create_temperature_video(self, output_filename="temperature_evolution", fps=10, vmin=None, vmax=None, cmap="viridis", redo=False, plot_analytical=False, nolog=False, plot_front=False, front_lb=0.01, front_ub=0.99):
         temperature_plot_paths = self.create_temperature_plots(vmin=vmin, vmax=vmax, cmap=cmap, redo=redo, plot_analytical=plot_analytical, nolog=nolog, plot_front=plot_front, front_lb=front_lb, front_ub=front_ub)
         create_movie(temperature_plot_paths, self.outdir, output_filename, framerate=fps)
+
+    def create_velocity_video(self, output_filename="velocity_evolution", fps=10, vmin=None, vmax=None, cmap="viridis", redo=False, plot_analytical=False, nolog=False, plot_front=False, front_lb=0.01, front_ub=0.99):
+        velocity_plot_paths = self.create_velocity_plots(vmin=vmin, vmax=vmax, cmap=cmap, redo=redo, plot_analytical=plot_analytical, nolog=nolog, plot_front=plot_front, front_lb=front_lb, front_ub=front_ub)
+        create_movie(velocity_plot_paths, self.outdir, output_filename, framerate=fps)
+
+    def create_cs_video(self, output_filename="cs_evolution", fps=10, vmin=None, vmax=None, cmap="viridis", redo=False, plot_analytical=False, nolog=False, plot_front=False, front_lb=0.01, front_ub=0.99):
+        cs_plot_paths = self.create_cs_plots(vmin=vmin, vmax=vmax, cmap=cmap, redo=redo, plot_analytical=plot_analytical, nolog=nolog, plot_front=plot_front, front_lb=front_lb, front_ub=front_ub)
+        create_movie(cs_plot_paths, self.outdir, output_filename, framerate=fps)
+
+    def create_pressure_video(self, output_filename="pressure_evolution", fps=10, vmin=None, vmax=None, cmap="viridis", redo=False, plot_analytical=False, nolog=False, plot_front=False, front_lb=0.01, front_ub=0.99):
+        pressure_plot_paths = self.create_pressure_plots(vmin=vmin, vmax=vmax, cmap=cmap, redo=redo, plot_analytical=plot_analytical, nolog=nolog, plot_front=plot_front, front_lb=front_lb, front_ub=front_ub)
+        create_movie(pressure_plot_paths, self.outdir, output_filename, framerate=fps)
 
     def get_normalized_effective_radius_history(self, lb=0.01, ub=0.99):
         """Get normalized effective radius history data from snapshots.

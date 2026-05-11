@@ -59,6 +59,72 @@ def temperature(field, data):
 
     return temp
 
+def v_x(field, data):
+    px = data['x-GasMomentum']
+    rho = data['gasDensity']
+    return px / rho
+
+def v_y(field, data):
+    py = data['y-GasMomentum']
+    rho = data['gasDensity']
+    return py / rho
+
+def v_z(field, data):
+    pz = data['z-GasMomentum']
+    rho = data['gasDensity']
+    return pz / rho
+
+def velocity_magnitude(field, data):
+    vx = v_x(field, data)
+    vy = v_y(field, data)
+    vz = v_z(field, data)
+    return np.sqrt(vx**2 + vy**2 + vz**2)
+
+def cs(field, data):
+    # Get number densities
+    n_HI = data['scalar_1'] / Constants.m_HI
+    n_HII = data['scalar_2'] / Constants.m_HII
+    n_e = data['scalar_0'] / Constants.m_e
+    rhotot = data['gasDensity']
+    e_int = data['gasInternalEnergy']
+    
+    # Calculate sum of n_i * f_i / 2, where f_i = 1 / (gamma_i - 1)
+    # For most species (monatomic ideal gas): gamma = 5/3, so f_i = 3/2
+    # Assuming all species have gamma = 5/3 (monatomic)
+    gamma = 5.0 / 3.0
+    gamma_HI, gamma_HII, gamma_e = gamma, gamma, gamma
+    
+    # Sum of number fractions weighted by degrees of freedom
+    n_total = n_HI + n_HII + n_e
+    sum_n_f_over_2 = (n_HI * (1 / (gamma_HI - 1)) + n_HII * (1 / (gamma_HII - 1)) + n_e * (1 / (gamma_e - 1)))
+    sum_n_f_over_2 /= n_total
+
+    p = e_int / sum_n_f_over_2
+    cs = np.sqrt(1 + 1/sum_n_f_over_2) * np.sqrt(p / rhotot)
+    return cs
+
+def pressure(field, data):
+    # Get number densities
+    n_HI = data['scalar_1'] / Constants.m_HI
+    n_HII = data['scalar_2'] / Constants.m_HII
+    n_e = data['scalar_0'] / Constants.m_e
+    
+    e_int = data['gasInternalEnergy']
+    
+    # Calculate sum of n_i * f_i / 2, where f_i = 1 / (gamma_i - 1)
+    # For most species (monatomic ideal gas): gamma = 5/3, so f_i = 3/2
+    # Assuming all species have gamma = 5/3 (monatomic)
+    gamma = 5.0 / 3.0
+    gamma_HI, gamma_HII, gamma_e = gamma, gamma, gamma
+    
+    # Sum of number fractions weighted by degrees of freedom
+    n_total = n_HI + n_HII + n_e
+    sum_n_f_over_2 = (n_HI * (1 / (gamma_HI - 1)) + n_HII * (1 / (gamma_HII - 1)) + n_e * (1 / (gamma_e - 1)))
+    sum_n_f_over_2 /= n_total
+
+    p = e_int / sum_n_f_over_2
+    return p
+
 class StromgrenSphereSnapshot:
     def __init__(self, path, outdir=None, analytical=None):
         self.path = path
@@ -71,6 +137,12 @@ class StromgrenSphereSnapshot:
         self.ds.add_field(("boxlib", "n_photon"), function=photon_density, units="dimensionless", sampling_type="cell")
         self.ds.add_field(("boxlib", "x_HI"), function=x_HI, units="dimensionless", sampling_type="cell")
         self.ds.add_field(("boxlib", "temperature"), function=temperature, units="dimensionless", sampling_type="cell")
+        self.ds.add_field(("boxlib", "v_x"), function=v_x, units="dimensionless", sampling_type="cell")
+        self.ds.add_field(("boxlib", "v_y"), function=v_y, units="dimensionless", sampling_type="cell")
+        self.ds.add_field(("boxlib", "v_z"), function=v_z, units="dimensionless", sampling_type="cell")
+        self.ds.add_field(("boxlib", "velocity"), function=velocity_magnitude, units="dimensionless", sampling_type="cell")
+        self.ds.add_field(("boxlib", "cs"), function=cs, units="dimensionless", sampling_type="cell")
+        self.ds.add_field(("boxlib", "pressure"), function=pressure, units="dimensionless", sampling_type="cell")
         self.ad = self.ds.all_data()
         if self.outdir is None:
             self.outdir = os.path.join(self.path, "plots")
@@ -116,6 +188,8 @@ class StromgrenSphereSnapshot:
             r = r.to(u.pc).value
             plot.annotate_sphere(self.ds.domain_left_edge, radius=(r, "pc"), circle_args={"color": "black", "linewidth": 4, "linestyle": "dashed"})
             plot.annotate_text((0.05, 0.95), f"t = {time/t_rec:.2f} t_rec", coord_system="axis")
+        else:
+            plot.annotate_text((0.05, 0.95), f"t = {(self.ds.current_time.value*u.s).to('Myr').value:.2f} Myr", coord_system="axis")
         if plot_front:
             r_med, r_low, r_high = self.get_front_radius(lb=front_lb, ub=front_ub)
             r_med = r_med
@@ -157,4 +231,28 @@ class StromgrenSphereSnapshot:
 
     def create_temperature_map(self, vmin=None, vmax=None, cmap="viridis", redo=False, plot_analytical=False, nolog=False, plot_front=False, front_lb=0.01, front_ub=0.99):
         outpath = self.create_quantity_map("temperature", vmin=vmin, vmax=vmax, cmap=cmap, redo=redo, plot_analytical=plot_analytical, nolog=nolog, plot_front=plot_front, front_lb=front_lb, front_ub=front_ub)
+        return outpath
+    
+    def create_vx_map(self, vmin=None, vmax=None, cmap="viridis", redo=False, plot_analytical=False, nolog=False, plot_front=False, front_lb=0.01, front_ub=0.99):
+        outpath = self.create_quantity_map("v_x", vmin=vmin, vmax=vmax, cmap=cmap, redo=redo, plot_analytical=plot_analytical, nolog=nolog, plot_front=plot_front, front_lb=front_lb, front_ub=front_ub)
+        return outpath
+    
+    def create_vy_map(self, vmin=None, vmax=None, cmap="viridis", redo=False, plot_analytical=False, nolog=False, plot_front=False, front_lb=0.01, front_ub=0.99):
+        outpath = self.create_quantity_map("v_y", vmin=vmin, vmax=vmax, cmap=cmap, redo=redo, plot_analytical=plot_analytical, nolog=nolog, plot_front=plot_front, front_lb=front_lb, front_ub=front_ub)
+        return outpath
+    
+    def create_vz_map(self, vmin=None, vmax=None, cmap="viridis", redo=False, plot_analytical=False, nolog=False, plot_front=False, front_lb=0.01, front_ub=0.99):
+        outpath = self.create_quantity_map("v_z", vmin=vmin, vmax=vmax, cmap=cmap, redo=redo, plot_analytical=plot_analytical, nolog=nolog, plot_front=plot_front, front_lb=front_lb, front_ub=front_ub)
+        return outpath
+    
+    def create_velocity_map(self, vmin=None, vmax=None, cmap="viridis", redo=False, plot_analytical=False, nolog=False, plot_front=False, front_lb=0.01, front_ub=0.99):
+        outpath = self.create_quantity_map("velocity", vmin=vmin, vmax=vmax, cmap=cmap, redo=redo, plot_analytical=plot_analytical, nolog=nolog, plot_front=plot_front, front_lb=front_lb, front_ub=front_ub)
+        return outpath
+    
+    def create_cs_map(self, vmin=None, vmax=None, cmap="viridis", redo=False, plot_analytical=False, nolog=False, plot_front=False, front_lb=0.01, front_ub=0.99):
+        outpath = self.create_quantity_map("cs", vmin=vmin, vmax=vmax, cmap=cmap, redo=redo, plot_analytical=plot_analytical, nolog=nolog, plot_front=plot_front, front_lb=front_lb, front_ub=front_ub)
+        return outpath
+    
+    def create_pressure_map(self, vmin=None, vmax=None, cmap="viridis", redo=False, plot_analytical=False, nolog=False, plot_front=False, front_lb=0.01, front_ub=0.99):
+        outpath = self.create_quantity_map("pressure", vmin=vmin, vmax=vmax, cmap=cmap, redo=redo, plot_analytical=plot_analytical, nolog=nolog, plot_front=plot_front, front_lb=front_lb, front_ub=front_ub)
         return outpath
