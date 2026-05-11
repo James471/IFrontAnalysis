@@ -87,13 +87,21 @@ class StromgrenSphere:
         radiation_plot_paths = self.create_radiation_plots(vmin=vmin, vmax=vmax, cmap=cmap, redo=redo, plot_analytical=plot_analytical, nolog=nolog, plot_front=plot_front, front_lb=front_lb, front_ub=front_ub)
         create_movie(radiation_plot_paths, self.outdir, output_filename, framerate=fps)
 
+    def create_scalar0_video(self, output_filename="scalar0_evolution", fps=10, vmin=None, vmax=None, cmap="viridis", redo=False, plot_analytical=False, nolog=False, plot_front=False, front_lb=0.01, front_ub=0.99):
+        scalar0_plot_paths = self.create_scalar0_plots(vmin=vmin, vmax=vmax, cmap=cmap, redo=redo, plot_analytical=plot_analytical, nolog=nolog, plot_front=plot_front, front_lb=front_lb, front_ub=front_ub)
+        create_movie(scalar0_plot_paths, self.outdir, output_filename, framerate=fps)
+
+    def create_scalar1_video(self, output_filename="scalar1_evolution", fps=10, vmin=None, vmax=None, cmap="viridis", redo=False, plot_analytical=False, nolog=False, plot_front=False, front_lb=0.01, front_ub=0.99):
+        scalar1_plot_paths = self.create_scalar1_plots(vmin=vmin, vmax=vmax, cmap=cmap, redo=redo, plot_analytical=plot_analytical, nolog=nolog, plot_front=plot_front, front_lb=front_lb, front_ub=front_ub)
+        create_movie(scalar1_plot_paths, self.outdir, output_filename, framerate=fps)
+
+    def create_scalar2_video(self, output_filename="scalar2_evolution", fps=10, vmin=None, vmax=None, cmap="viridis", redo=False, plot_analytical=False, nolog=False, plot_front=False, front_lb=0.01, front_ub=0.99):
+        scalar2_plot_paths = self.create_scalar2_plots(vmin=vmin, vmax=vmax, cmap=cmap, redo=redo, plot_analytical=plot_analytical, nolog=nolog, plot_front=plot_front, front_lb=front_lb, front_ub=front_ub)
+        create_movie(scalar2_plot_paths, self.outdir, output_filename, framerate=fps)
+
     def create_scalar_videos(self, output_filename_prefix="scalar_evolution", fps=10, vmin=None, vmax=None, cmap="viridis", redo=False, plot_analytical=False, nolog=False, plot_front=False, front_lb=0.01, front_ub=0.99):
-        scalar_plot0_paths = self.create_scalar0_plots(vmin=vmin, vmax=vmax, cmap=cmap, redo=redo, plot_analytical=plot_analytical, nolog=nolog, plot_front=plot_front, front_lb=front_lb, front_ub=front_ub)
-        scalar_plot1_paths = self.create_scalar1_plots(vmin=vmin, vmax=vmax, cmap=cmap, redo=redo, plot_analytical=plot_analytical, nolog=nolog, plot_front=plot_front, front_lb=front_lb, front_ub=front_ub)
-        scalar_plot2_paths = self.create_scalar2_plots(vmin=vmin, vmax=vmax, cmap=cmap, redo=redo, plot_analytical=plot_analytical, nolog=nolog, plot_front=plot_front, front_lb=front_lb, front_ub=front_ub)
-        create_movie(scalar_plot0_paths, self.outdir, f"{output_filename_prefix}_0", framerate=fps)
-        create_movie(scalar_plot1_paths, self.outdir, f"{output_filename_prefix}_1", framerate=fps)
-        create_movie(scalar_plot2_paths, self.outdir, f"{output_filename_prefix}_2", framerate=fps)
+        for i in range(3):
+            self.create_quantity_video(field_name=f"scalar{i}", output_filename=f"{output_filename_prefix}_{i}", fps=fps, vmin=vmin, vmax=vmax, cmap=cmap, redo=redo, plot_analytical=plot_analytical, nolog=nolog, plot_front=plot_front, front_lb=front_lb, front_ub=front_ub)
 
     def create_x_HI_video(self, output_filename="x_HI_evolution", fps=10, vmin=None, vmax=None, cmap="viridis", redo=False, plot_analytical=False, nolog=False, plot_front=False, front_lb=0.01, front_ub=0.99):
         x_HI_plot_paths = self.create_x_HI_plots(vmin=vmin, vmax=vmax, cmap=cmap, redo=redo, plot_analytical=plot_analytical, nolog=nolog, plot_front=plot_front, front_lb=front_lb, front_ub=front_ub)
