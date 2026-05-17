@@ -288,3 +288,14 @@ class StromgrenSphere:
         ax.set_ylabel(r"$\Delta \mathrm{r}/\mathrm{dx}$")
         ax.legend()
         return fig, ax
+
+    def get_mass_in_sphere_history(self, fig=None, ax=None, label=None):
+        """Get mass in sphere history data from snapshots.
+        
+        Returns:
+            t_arr: Time array in seconds
+            m_in_sphere: Mass in sphere array in solar masses
+        """
+        t_arr = np.array(self.time_list) * u.s
+        m_in_sphere = np.array([snapshot.get_mass_in_sphere() for snapshot in self.snapshot_list]) * u.Msun
+        return t_arr, m_in_sphere

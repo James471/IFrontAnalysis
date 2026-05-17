@@ -205,6 +205,16 @@ class StromgrenSphereSnapshot:
         r_effective = (3 * 8 * total_volume / (4 * np.pi))**(1/3)
         return r_effective.to('pc')
 
+    def get_mass_in_sphere(self):
+        r = self.get_effective_radius()
+        ad = self.ad
+        density = ad['gasDensity']
+        volume = ad['cell_volume']
+        r_cell = np.sqrt(ad['x']**2 + ad['y']**2 + ad['z']**2)
+        mask = r_cell < r
+        mass = np.sum(density[mask] * volume[mask])
+        return mass.to('Msun')
+
     def create_radiation_map(self, vmin=None, vmax=None, cmap="viridis", redo=False, plot_analytical=False, nolog=False, plot_front=False, front_lb=0.01, front_ub=0.99):
         outpath = self.create_quantity_map("n_photon", vmin=vmin, vmax=vmax, cmap=cmap, redo=redo, plot_analytical=plot_analytical, nolog=nolog, plot_front=plot_front, front_lb=front_lb, front_ub=front_ub)
         return outpath
