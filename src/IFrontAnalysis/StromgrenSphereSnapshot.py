@@ -162,7 +162,7 @@ class StromgrenSphereSnapshot:
         vmin, vmax = np.min(field_data), np.max(field_data)
         return vmin, vmax
 
-    def create_quantity_map(self, field_name, vmin=None, vmax=None, cmap="viridis", redo=False, plot_analytical=False, nolog=False, plot_front=False, front_lb=0.01, front_ub=0.99):
+    def create_quantity_map(self, field_name, vmin=None, vmax=None, cmap="viridis", redo=False, plot_analytical=False, plot_eff=False, nolog=False, plot_front=False, front_lb=0.01, front_ub=0.99):
         outpath = os.path.join(self.outdir, f"{field_name}.png")
         if os.path.exists(outpath) and not redo:
             return outpath
@@ -194,6 +194,9 @@ class StromgrenSphereSnapshot:
             r_med, r_low, r_high = self.get_front_radius(lb=front_lb, ub=front_ub)
             r_med = r_med
             plot.annotate_sphere(self.ds.domain_left_edge, radius=(r_med, "pc"), circle_args={"color": "red", "linewidth": 2})
+        if plot_eff:
+            r_eff = self.get_effective_radius()
+            plot.annotate_sphere(self.ds.domain_left_edge, radius=(r_eff, "pc"), circle_args={"color": "blue", "linewidth": 2})
         plot.save(outpath)
         return outpath
 
@@ -208,61 +211,61 @@ class StromgrenSphereSnapshot:
     def get_mass_in_sphere(self):
         r = self.get_effective_radius()
         ad = self.ad
-        density = ad['gasDensity']
-        volume = ad['cell_volume']
+        density = ad['gasDensity'].value * u.g / u.cm**3
+        volume = ad['cell_volume'].value * u.cm**3
         r_cell = np.sqrt(ad['x']**2 + ad['y']**2 + ad['z']**2)
         mask = r_cell < r
         mass = np.sum(density[mask] * volume[mask])
-        return mass.to('Msun')
+        return mass
 
     def create_radiation_map(self, vmin=None, vmax=None, cmap="viridis", redo=False, plot_analytical=False, nolog=False, plot_front=False, front_lb=0.01, front_ub=0.99):
         outpath = self.create_quantity_map("n_photon", vmin=vmin, vmax=vmax, cmap=cmap, redo=redo, plot_analytical=plot_analytical, nolog=nolog, plot_front=plot_front, front_lb=front_lb, front_ub=front_ub)
         return outpath
 
-    def create_scalar0_map(self, vmin=None, vmax=None, cmap="viridis", redo=False, plot_analytical=False, nolog=False, plot_front=False, front_lb=0.01, front_ub=0.99):
-        outpath = self.create_quantity_map("n_e", vmin=vmin, vmax=vmax, cmap=cmap, redo=redo, plot_analytical=plot_analytical, nolog=nolog, plot_front=plot_front, front_lb=front_lb, front_ub=front_ub)
+    def create_scalar0_map(self, vmin=None, vmax=None, cmap="viridis", redo=False, plot_analytical=False, plot_eff=False, nolog=False, plot_front=False, front_lb=0.01, front_ub=0.99):
+        outpath = self.create_quantity_map("n_e", vmin=vmin, vmax=vmax, cmap=cmap, redo=redo, plot_analytical=plot_analytical, plot_eff=plot_eff, nolog=nolog, plot_front=plot_front, front_lb=front_lb, front_ub=front_ub)
         return outpath
 
-    def create_scalar1_map(self, vmin=None, vmax=None, cmap="viridis", redo=False, plot_analytical=False, nolog=False, plot_front=False, front_lb=0.01, front_ub=0.99):
-        outpath = self.create_quantity_map("n_HI", vmin=vmin, vmax=vmax, cmap=cmap, redo=redo, plot_analytical=plot_analytical, nolog=nolog, plot_front=plot_front, front_lb=front_lb, front_ub=front_ub)
+    def create_scalar1_map(self, vmin=None, vmax=None, cmap="viridis", redo=False, plot_analytical=False, plot_eff=False, nolog=False, plot_front=False, front_lb=0.01, front_ub=0.99):
+        outpath = self.create_quantity_map("n_HI", vmin=vmin, vmax=vmax, cmap=cmap, redo=redo, plot_analytical=plot_analytical, plot_eff=plot_eff, nolog=nolog, plot_front=plot_front, front_lb=front_lb, front_ub=front_ub)
         return outpath
 
-    def create_scalar2_map(self, vmin=None, vmax=None, cmap="viridis", redo=False, plot_analytical=False, nolog=False, plot_front=False, front_lb=0.01, front_ub=0.99):
-        outpath = self.create_quantity_map("n_HII", vmin=vmin, vmax=vmax, cmap=cmap, redo=redo, plot_analytical=plot_analytical, nolog=nolog, plot_front=plot_front, front_lb=front_lb, front_ub=front_ub)
+    def create_scalar2_map(self, vmin=None, vmax=None, cmap="viridis", redo=False, plot_analytical=False, plot_eff=False, nolog=False, plot_front=False, front_lb=0.01, front_ub=0.99):
+        outpath = self.create_quantity_map("n_HII", vmin=vmin, vmax=vmax, cmap=cmap, redo=redo, plot_analytical=plot_analytical, plot_eff=plot_eff, nolog=nolog, plot_front=plot_front, front_lb=front_lb, front_ub=front_ub)
         return outpath
 
-    def create_x_HI_map(self, vmin=None, vmax=None, cmap="viridis", redo=False, plot_analytical=False, nolog=False, plot_front=False, front_lb=0.01, front_ub=0.99):
-        outpath = self.create_quantity_map("x_HI", vmin=vmin, vmax=vmax, cmap=cmap, redo=redo, plot_analytical=plot_analytical, nolog=nolog, plot_front=plot_front, front_lb=front_lb, front_ub=front_ub)
+    def create_x_HI_map(self, vmin=None, vmax=None, cmap="viridis", redo=False, plot_analytical=False, plot_eff=False, nolog=False, plot_front=False, front_lb=0.01, front_ub=0.99):
+        outpath = self.create_quantity_map("x_HI", vmin=vmin, vmax=vmax, cmap=cmap, redo=redo, plot_analytical=plot_analytical, plot_eff=plot_eff, nolog=nolog, plot_front=plot_front, front_lb=front_lb, front_ub=front_ub)
         return outpath
 
-    def create_density_map(self, vmin=None, vmax=None, cmap="viridis", redo=False, plot_analytical=False, nolog=False, plot_front=False, front_lb=0.01, front_ub=0.99):
-        outpath = self.create_quantity_map("gasDensity", vmin=vmin, vmax=vmax, cmap=cmap, redo=redo, plot_analytical=plot_analytical, nolog=nolog, plot_front=plot_front, front_lb=front_lb, front_ub=front_ub)
+    def create_density_map(self, vmin=None, vmax=None, cmap="viridis", redo=False, plot_analytical=False, plot_eff=False, nolog=False, plot_front=False, front_lb=0.01, front_ub=0.99):
+        outpath = self.create_quantity_map("gasDensity", vmin=vmin, vmax=vmax, cmap=cmap, redo=redo, plot_analytical=plot_analytical, plot_eff=plot_eff, nolog=nolog, plot_front=plot_front, front_lb=front_lb, front_ub=front_ub)
         return outpath
 
-    def create_temperature_map(self, vmin=None, vmax=None, cmap="viridis", redo=False, plot_analytical=False, nolog=False, plot_front=False, front_lb=0.01, front_ub=0.99):
-        outpath = self.create_quantity_map("temperature", vmin=vmin, vmax=vmax, cmap=cmap, redo=redo, plot_analytical=plot_analytical, nolog=nolog, plot_front=plot_front, front_lb=front_lb, front_ub=front_ub)
+    def create_temperature_map(self, vmin=None, vmax=None, cmap="viridis", redo=False, plot_analytical=False, plot_eff=False, nolog=False, plot_front=False, front_lb=0.01, front_ub=0.99):
+        outpath = self.create_quantity_map("temperature", vmin=vmin, vmax=vmax, cmap=cmap, redo=redo, plot_analytical=plot_analytical, plot_eff=plot_eff, nolog=nolog, plot_front=plot_front, front_lb=front_lb, front_ub=front_ub)
+        return outpath
+
+    def create_vx_map(self, vmin=None, vmax=None, cmap="viridis", redo=False, plot_analytical=False, plot_eff=False, nolog=False, plot_front=False, front_lb=0.01, front_ub=0.99):
+        outpath = self.create_quantity_map("v_x", vmin=vmin, vmax=vmax, cmap=cmap, redo=redo, plot_analytical=plot_analytical, plot_eff=plot_eff, nolog=nolog, plot_front=plot_front, front_lb=front_lb, front_ub=front_ub)
+        return outpath
+
+    def create_vy_map(self, vmin=None, vmax=None, cmap="viridis", redo=False, plot_analytical=False, plot_eff=False, nolog=False, plot_front=False, front_lb=0.01, front_ub=0.99):
+        outpath = self.create_quantity_map("v_y", vmin=vmin, vmax=vmax, cmap=cmap, redo=redo, plot_analytical=plot_analytical, plot_eff=plot_eff, nolog=nolog, plot_front=plot_front, front_lb=front_lb, front_ub=front_ub)
         return outpath
     
-    def create_vx_map(self, vmin=None, vmax=None, cmap="viridis", redo=False, plot_analytical=False, nolog=False, plot_front=False, front_lb=0.01, front_ub=0.99):
-        outpath = self.create_quantity_map("v_x", vmin=vmin, vmax=vmax, cmap=cmap, redo=redo, plot_analytical=plot_analytical, nolog=nolog, plot_front=plot_front, front_lb=front_lb, front_ub=front_ub)
+    def create_vz_map(self, vmin=None, vmax=None, cmap="viridis", redo=False, plot_analytical=False, plot_eff=False, nolog=False, plot_front=False, front_lb=0.01, front_ub=0.99):
+        outpath = self.create_quantity_map("v_z", vmin=vmin, vmax=vmax, cmap=cmap, redo=redo, plot_analytical=plot_analytical, plot_eff=plot_eff, nolog=nolog, plot_front=plot_front, front_lb=front_lb, front_ub=front_ub)
         return outpath
     
-    def create_vy_map(self, vmin=None, vmax=None, cmap="viridis", redo=False, plot_analytical=False, nolog=False, plot_front=False, front_lb=0.01, front_ub=0.99):
-        outpath = self.create_quantity_map("v_y", vmin=vmin, vmax=vmax, cmap=cmap, redo=redo, plot_analytical=plot_analytical, nolog=nolog, plot_front=plot_front, front_lb=front_lb, front_ub=front_ub)
+    def create_velocity_map(self, vmin=None, vmax=None, cmap="viridis", redo=False, plot_analytical=False, plot_eff=False, nolog=False, plot_front=False, front_lb=0.01, front_ub=0.99):
+        outpath = self.create_quantity_map("velocity", vmin=vmin, vmax=vmax, cmap=cmap, redo=redo, plot_analytical=plot_analytical, plot_eff=plot_eff, nolog=nolog, plot_front=plot_front, front_lb=front_lb, front_ub=front_ub)
         return outpath
     
-    def create_vz_map(self, vmin=None, vmax=None, cmap="viridis", redo=False, plot_analytical=False, nolog=False, plot_front=False, front_lb=0.01, front_ub=0.99):
-        outpath = self.create_quantity_map("v_z", vmin=vmin, vmax=vmax, cmap=cmap, redo=redo, plot_analytical=plot_analytical, nolog=nolog, plot_front=plot_front, front_lb=front_lb, front_ub=front_ub)
+    def create_cs_map(self, vmin=None, vmax=None, cmap="viridis", redo=False, plot_analytical=False, plot_eff=False, nolog=False, plot_front=False, front_lb=0.01, front_ub=0.99):
+        outpath = self.create_quantity_map("cs", vmin=vmin, vmax=vmax, cmap=cmap, redo=redo, plot_analytical=plot_analytical, plot_eff=plot_eff, nolog=nolog, plot_front=plot_front, front_lb=front_lb, front_ub=front_ub)
         return outpath
     
-    def create_velocity_map(self, vmin=None, vmax=None, cmap="viridis", redo=False, plot_analytical=False, nolog=False, plot_front=False, front_lb=0.01, front_ub=0.99):
-        outpath = self.create_quantity_map("velocity", vmin=vmin, vmax=vmax, cmap=cmap, redo=redo, plot_analytical=plot_analytical, nolog=nolog, plot_front=plot_front, front_lb=front_lb, front_ub=front_ub)
-        return outpath
-    
-    def create_cs_map(self, vmin=None, vmax=None, cmap="viridis", redo=False, plot_analytical=False, nolog=False, plot_front=False, front_lb=0.01, front_ub=0.99):
-        outpath = self.create_quantity_map("cs", vmin=vmin, vmax=vmax, cmap=cmap, redo=redo, plot_analytical=plot_analytical, nolog=nolog, plot_front=plot_front, front_lb=front_lb, front_ub=front_ub)
-        return outpath
-    
-    def create_pressure_map(self, vmin=None, vmax=None, cmap="viridis", redo=False, plot_analytical=False, nolog=False, plot_front=False, front_lb=0.01, front_ub=0.99):
-        outpath = self.create_quantity_map("pressure", vmin=vmin, vmax=vmax, cmap=cmap, redo=redo, plot_analytical=plot_analytical, nolog=nolog, plot_front=plot_front, front_lb=front_lb, front_ub=front_ub)
+    def create_pressure_map(self, vmin=None, vmax=None, cmap="viridis", redo=False, plot_analytical=False, plot_eff=False, nolog=False, plot_front=False, front_lb=0.01, front_ub=0.99):
+        outpath = self.create_quantity_map("pressure", vmin=vmin, vmax=vmax, cmap=cmap, redo=redo, plot_analytical=plot_analytical, plot_eff=plot_eff, nolog=nolog, plot_front=plot_front, front_lb=front_lb, front_ub=front_ub)
         return outpath

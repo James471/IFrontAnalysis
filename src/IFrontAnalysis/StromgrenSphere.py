@@ -42,7 +42,7 @@ class StromgrenSphere:
                 vmax = max(vmax, snapshot_vmax)
         return vmin, vmax
     
-    def create_quantity_plots(self, field_name, vmin=None, vmax=None, cmap="viridis", redo=False, plot_analytical=False, nolog=False, plot_front=False, front_lb=0.01, front_ub=0.99):
+    def create_quantity_plots(self, field_name, vmin=None, vmax=None, cmap="viridis", redo=False, plot_analytical=False, plot_eff=False, nolog=False, plot_front=False, front_lb=0.01, front_ub=0.99):
         plot_paths = []
         qty_range = self.get_quantity_range(field_name)
         if vmin is None:
@@ -50,81 +50,81 @@ class StromgrenSphere:
         if vmax is None:
             vmax = qty_range[1]
         for snapshot in self.snapshot_list:
-            plot_paths.append(snapshot.create_quantity_map(field_name, vmin=vmin, vmax=vmax, cmap=cmap, redo=redo, plot_analytical=plot_analytical, nolog=nolog, plot_front=plot_front, front_lb=front_lb, front_ub=front_ub))
+            plot_paths.append(snapshot.create_quantity_map(field_name, vmin=vmin, vmax=vmax, cmap=cmap, redo=redo, plot_analytical=plot_analytical, plot_eff=plot_eff, nolog=nolog, plot_front=plot_front, front_lb=front_lb, front_ub=front_ub))
         return plot_paths
 
-    def create_radiation_plots(self, vmin=None, vmax=None, cmap="viridis", redo=False, plot_analytical=False, nolog=False, plot_front=False, front_lb=0.01, front_ub=0.99):
-        return self.create_quantity_plots("n_photon", vmin=vmin, vmax=vmax, cmap=cmap, redo=redo, plot_analytical=plot_analytical, nolog=nolog, plot_front=plot_front, front_lb=front_lb, front_ub=front_ub)
+    def create_radiation_plots(self, vmin=None, vmax=None, cmap="viridis", redo=False, plot_analytical=False, plot_eff=False, nolog=False, plot_front=False, front_lb=0.01, front_ub=0.99):
+        return self.create_quantity_plots("n_photon", vmin=vmin, vmax=vmax, cmap=cmap, redo=redo, plot_analytical=plot_analytical, plot_eff=plot_eff, nolog=nolog, plot_front=plot_front, front_lb=front_lb, front_ub=front_ub)
 
-    def create_scalar0_plots(self, vmin=None, vmax=None, cmap="viridis", redo=False, plot_analytical=False, nolog=False, plot_front=False, front_lb=0.01, front_ub=0.99):
-        return self.create_quantity_plots("n_e", vmin=vmin, vmax=vmax, cmap=cmap, redo=redo, plot_analytical=plot_analytical, nolog=nolog, plot_front=plot_front, front_lb=front_lb, front_ub=front_ub)
+    def create_scalar0_plots(self, vmin=None, vmax=None, cmap="viridis", redo=False, plot_analytical=False, plot_eff=False, nolog=False, plot_front=False, front_lb=0.01, front_ub=0.99):
+        return self.create_quantity_plots("n_e", vmin=vmin, vmax=vmax, cmap=cmap, redo=redo, plot_analytical=plot_analytical, plot_eff=plot_eff, nolog=nolog, plot_front=plot_front, front_lb=front_lb, front_ub=front_ub)
 
-    def create_scalar1_plots(self, vmin=None, vmax=None, cmap="viridis", redo=False, plot_analytical=False, nolog=False, plot_front=False, front_lb=0.01, front_ub=0.99):
-        return self.create_quantity_plots("n_HI", vmin=vmin, vmax=vmax, cmap=cmap, redo=redo, plot_analytical=plot_analytical, nolog=nolog, plot_front=plot_front, front_lb=front_lb, front_ub=front_ub)
+    def create_scalar1_plots(self, vmin=None, vmax=None, cmap="viridis", redo=False, plot_analytical=False, plot_eff=False, nolog=False, plot_front=False, front_lb=0.01, front_ub=0.99):
+        return self.create_quantity_plots("n_HI", vmin=vmin, vmax=vmax, cmap=cmap, redo=redo, plot_analytical=plot_analytical, plot_eff=plot_eff, nolog=nolog, plot_front=plot_front, front_lb=front_lb, front_ub=front_ub)
 
-    def create_scalar2_plots(self, vmin=None, vmax=None, cmap="viridis", redo=False, plot_analytical=False, nolog=False, plot_front=False, front_lb=0.01, front_ub=0.99):
-        return self.create_quantity_plots("n_HII", vmin=vmin, vmax=vmax, cmap=cmap, redo=redo, plot_analytical=plot_analytical, nolog=nolog, plot_front=plot_front, front_lb=front_lb, front_ub=front_ub)
+    def create_scalar2_plots(self, vmin=None, vmax=None, cmap="viridis", redo=False, plot_analytical=False, plot_eff=False, nolog=False, plot_front=False, front_lb=0.01, front_ub=0.99):
+        return self.create_quantity_plots("n_HII", vmin=vmin, vmax=vmax, cmap=cmap, redo=redo, plot_analytical=plot_analytical, plot_eff=plot_eff, nolog=nolog, plot_front=plot_front, front_lb=front_lb, front_ub=front_ub)
 
-    def create_x_HI_plots(self, vmin=None, vmax=None, cmap="viridis", redo=False, plot_analytical=False, nolog=False, plot_front=False, front_lb=0.01, front_ub=0.99):
-        return self.create_quantity_plots("x_HI", vmin=vmin, vmax=vmax, cmap=cmap, redo=redo, plot_analytical=plot_analytical, nolog=nolog, plot_front=plot_front, front_lb=front_lb, front_ub=front_ub)
+    def create_x_HI_plots(self, vmin=None, vmax=None, cmap="viridis", redo=False, plot_analytical=False, plot_eff=False, nolog=False, plot_front=False, front_lb=0.01, front_ub=0.99):
+        return self.create_quantity_plots("x_HI", vmin=vmin, vmax=vmax, cmap=cmap, redo=redo, plot_analytical=plot_analytical, plot_eff=plot_eff, nolog=nolog, plot_front=plot_front, front_lb=front_lb, front_ub=front_ub)
 
-    def create_density_plots(self, vmin=None, vmax=None, cmap="viridis", redo=False, plot_analytical=False, nolog=False, plot_front=False, front_lb=0.01, front_ub=0.99):
-        return self.create_quantity_plots("gasDensity", vmin=vmin, vmax=vmax, cmap=cmap, redo=redo, plot_analytical=plot_analytical, nolog=nolog, plot_front=plot_front, front_lb=front_lb, front_ub=front_ub)
-    
-    def create_temperature_plots(self, vmin=None, vmax=None, cmap="viridis", redo=False, plot_analytical=False, nolog=False, plot_front=False, front_lb=0.01, front_ub=0.99):
-        return self.create_quantity_plots("temperature", vmin=vmin, vmax=vmax, cmap=cmap, redo=redo, plot_analytical=plot_analytical, nolog=nolog, plot_front=plot_front, front_lb=front_lb, front_ub=front_ub)
-    
-    def create_velocity_plots(self, vmin=None, vmax=None, cmap="viridis", redo=False, plot_analytical=False, nolog=False, plot_front=False, front_lb=0.01, front_ub=0.99):
-        return self.create_quantity_plots("velocity", vmin=vmin, vmax=vmax, cmap=cmap, redo=redo, plot_analytical=plot_analytical, nolog=nolog, plot_front=plot_front, front_lb=front_lb, front_ub=front_ub)
-    
-    def create_cs_plots(self, vmin=None, vmax=None, cmap="viridis", redo=False, plot_analytical=False, nolog=False, plot_front=False, front_lb=0.01, front_ub=0.99):
-        return self.create_quantity_plots("cs", vmin=vmin, vmax=vmax, cmap=cmap, redo=redo, plot_analytical=plot_analytical, nolog=nolog, plot_front=plot_front, front_lb=front_lb, front_ub=front_ub)
-    
-    def create_pressure_plots(self, vmin=None, vmax=None, cmap="viridis", redo=False, plot_analytical=False, nolog=False, plot_front=False, front_lb=0.01, front_ub=0.99):
-        return self.create_quantity_plots("pressure", vmin=vmin, vmax=vmax, cmap=cmap, redo=redo, plot_analytical=plot_analytical, nolog=nolog, plot_front=plot_front, front_lb=front_lb, front_ub=front_ub)
+    def create_density_plots(self, vmin=None, vmax=None, cmap="viridis", redo=False, plot_analytical=False, plot_eff=False, nolog=False, plot_front=False, front_lb=0.01, front_ub=0.99):
+        return self.create_quantity_plots("gasDensity", vmin=vmin, vmax=vmax, cmap=cmap, redo=redo, plot_analytical=plot_analytical, plot_eff=plot_eff, nolog=nolog, plot_front=plot_front, front_lb=front_lb, front_ub=front_ub)
 
-    def create_radiation_video(self, output_filename="radiation_evolution", fps=10, vmin=None, vmax=None, cmap="viridis", redo=False, plot_analytical=False, nolog=False, plot_front=False, front_lb=0.01, front_ub=0.99):
-        radiation_plot_paths = self.create_radiation_plots(vmin=vmin, vmax=vmax, cmap=cmap, redo=redo, plot_analytical=plot_analytical, nolog=nolog, plot_front=plot_front, front_lb=front_lb, front_ub=front_ub)
+    def create_temperature_plots(self, vmin=None, vmax=None, cmap="viridis", redo=False, plot_analytical=False, plot_eff=False, nolog=False, plot_front=False, front_lb=0.01, front_ub=0.99):
+        return self.create_quantity_plots("temperature", vmin=vmin, vmax=vmax, cmap=cmap, redo=redo, plot_analytical=plot_analytical, plot_eff=plot_eff, nolog=nolog, plot_front=plot_front, front_lb=front_lb, front_ub=front_ub)
+
+    def create_velocity_plots(self, vmin=None, vmax=None, cmap="viridis", redo=False, plot_analytical=False, plot_eff=False, nolog=False, plot_front=False, front_lb=0.01, front_ub=0.99):
+        return self.create_quantity_plots("velocity", vmin=vmin, vmax=vmax, cmap=cmap, redo=redo, plot_analytical=plot_analytical, plot_eff=plot_eff, nolog=nolog, plot_front=plot_front, front_lb=front_lb, front_ub=front_ub)
+
+    def create_cs_plots(self, vmin=None, vmax=None, cmap="viridis", redo=False, plot_analytical=False, plot_eff=False, nolog=False, plot_front=False, front_lb=0.01, front_ub=0.99):
+        return self.create_quantity_plots("cs", vmin=vmin, vmax=vmax, cmap=cmap, redo=redo, plot_analytical=plot_analytical, plot_eff=plot_eff, nolog=nolog, plot_front=plot_front, front_lb=front_lb, front_ub=front_ub)
+
+    def create_pressure_plots(self, vmin=None, vmax=None, cmap="viridis", redo=False, plot_analytical=False, plot_eff=False, nolog=False, plot_front=False, front_lb=0.01, front_ub=0.99):
+        return self.create_quantity_plots("pressure", vmin=vmin, vmax=vmax, cmap=cmap, redo=redo, plot_analytical=plot_analytical, plot_eff=plot_eff, nolog=nolog, plot_front=plot_front, front_lb=front_lb, front_ub=front_ub)
+
+    def create_radiation_video(self, output_filename="radiation_evolution", fps=10, vmin=None, vmax=None, cmap="viridis", redo=False, plot_analytical=False, plot_eff=False, nolog=False, plot_front=False, front_lb=0.01, front_ub=0.99):
+        radiation_plot_paths = self.create_radiation_plots(vmin=vmin, vmax=vmax, cmap=cmap, redo=redo, plot_analytical=plot_analytical, plot_eff=plot_eff, nolog=nolog, plot_front=plot_front, front_lb=front_lb, front_ub=front_ub)
         create_movie(radiation_plot_paths, self.outdir, output_filename, framerate=fps)
 
-    def create_scalar0_video(self, output_filename="scalar0_evolution", fps=10, vmin=None, vmax=None, cmap="viridis", redo=False, plot_analytical=False, nolog=False, plot_front=False, front_lb=0.01, front_ub=0.99):
-        scalar0_plot_paths = self.create_scalar0_plots(vmin=vmin, vmax=vmax, cmap=cmap, redo=redo, plot_analytical=plot_analytical, nolog=nolog, plot_front=plot_front, front_lb=front_lb, front_ub=front_ub)
+    def create_scalar0_video(self, output_filename="scalar0_evolution", fps=10, vmin=None, vmax=None, cmap="viridis", redo=False, plot_analytical=False, plot_eff=False, nolog=False, plot_front=False, front_lb=0.01, front_ub=0.99):
+        scalar0_plot_paths = self.create_scalar0_plots(vmin=vmin, vmax=vmax, cmap=cmap, redo=redo, plot_analytical=plot_analytical, plot_eff=plot_eff, nolog=nolog, plot_front=plot_front, front_lb=front_lb, front_ub=front_ub)
         create_movie(scalar0_plot_paths, self.outdir, output_filename, framerate=fps)
 
-    def create_scalar1_video(self, output_filename="scalar1_evolution", fps=10, vmin=None, vmax=None, cmap="viridis", redo=False, plot_analytical=False, nolog=False, plot_front=False, front_lb=0.01, front_ub=0.99):
-        scalar1_plot_paths = self.create_scalar1_plots(vmin=vmin, vmax=vmax, cmap=cmap, redo=redo, plot_analytical=plot_analytical, nolog=nolog, plot_front=plot_front, front_lb=front_lb, front_ub=front_ub)
+    def create_scalar1_video(self, output_filename="scalar1_evolution", fps=10, vmin=None, vmax=None, cmap="viridis", redo=False, plot_analytical=False, plot_eff=False, nolog=False, plot_front=False, front_lb=0.01, front_ub=0.99):
+        scalar1_plot_paths = self.create_scalar1_plots(vmin=vmin, vmax=vmax, cmap=cmap, redo=redo, plot_analytical=plot_analytical, plot_eff=plot_eff, nolog=nolog, plot_front=plot_front, front_lb=front_lb, front_ub=front_ub)
         create_movie(scalar1_plot_paths, self.outdir, output_filename, framerate=fps)
 
-    def create_scalar2_video(self, output_filename="scalar2_evolution", fps=10, vmin=None, vmax=None, cmap="viridis", redo=False, plot_analytical=False, nolog=False, plot_front=False, front_lb=0.01, front_ub=0.99):
-        scalar2_plot_paths = self.create_scalar2_plots(vmin=vmin, vmax=vmax, cmap=cmap, redo=redo, plot_analytical=plot_analytical, nolog=nolog, plot_front=plot_front, front_lb=front_lb, front_ub=front_ub)
+    def create_scalar2_video(self, output_filename="scalar2_evolution", fps=10, vmin=None, vmax=None, cmap="viridis", redo=False, plot_analytical=False, plot_eff=False, nolog=False, plot_front=False, front_lb=0.01, front_ub=0.99):
+        scalar2_plot_paths = self.create_scalar2_plots(vmin=vmin, vmax=vmax, cmap=cmap, redo=redo, plot_analytical=plot_analytical, plot_eff=plot_eff, nolog=nolog, plot_front=plot_front, front_lb=front_lb, front_ub=front_ub)
         create_movie(scalar2_plot_paths, self.outdir, output_filename, framerate=fps)
 
-    def create_scalar_videos(self, output_filename_prefix="scalar_evolution", fps=10, vmin=None, vmax=None, cmap="viridis", redo=False, plot_analytical=False, nolog=False, plot_front=False, front_lb=0.01, front_ub=0.99):
+    def create_scalar_videos(self, output_filename_prefix="scalar_evolution", fps=10, vmin=None, vmax=None, cmap="viridis", redo=False, plot_analytical=False, plot_eff=False, nolog=False, plot_front=False, front_lb=0.01, front_ub=0.99):
         for i in range(3):
-            self.create_quantity_video(field_name=f"scalar{i}", output_filename=f"{output_filename_prefix}_{i}", fps=fps, vmin=vmin, vmax=vmax, cmap=cmap, redo=redo, plot_analytical=plot_analytical, nolog=nolog, plot_front=plot_front, front_lb=front_lb, front_ub=front_ub)
+            self.create_quantity_video(field_name=f"scalar{i}", output_filename=f"{output_filename_prefix}_{i}", fps=fps, vmin=vmin, vmax=vmax, cmap=cmap, redo=redo, plot_analytical=plot_analytical, plot_eff=plot_eff, nolog=nolog, plot_front=plot_front, front_lb=front_lb, front_ub=front_ub)
 
-    def create_x_HI_video(self, output_filename="x_HI_evolution", fps=10, vmin=None, vmax=None, cmap="viridis", redo=False, plot_analytical=False, nolog=False, plot_front=False, front_lb=0.01, front_ub=0.99):
-        x_HI_plot_paths = self.create_x_HI_plots(vmin=vmin, vmax=vmax, cmap=cmap, redo=redo, plot_analytical=plot_analytical, nolog=nolog, plot_front=plot_front, front_lb=front_lb, front_ub=front_ub)
+    def create_x_HI_video(self, output_filename="x_HI_evolution", fps=10, vmin=None, vmax=None, cmap="viridis", redo=False, plot_analytical=False, plot_eff=False, nolog=False, plot_front=False, front_lb=0.01, front_ub=0.99):
+        x_HI_plot_paths = self.create_x_HI_plots(vmin=vmin, vmax=vmax, cmap=cmap, redo=redo, plot_analytical=plot_analytical, plot_eff=plot_eff, nolog=nolog, plot_front=plot_front, front_lb=front_lb, front_ub=front_ub)
         create_movie(x_HI_plot_paths, self.outdir, output_filename, framerate=fps)
 
-    def create_density_video(self, output_filename="density_evolution", fps=10, vmin=None, vmax=None, cmap="viridis", redo=False, plot_analytical=False, nolog=False, plot_front=False, front_lb=0.01, front_ub=0.99):
-        density_plot_paths = self.create_density_plots(vmin=vmin, vmax=vmax, cmap=cmap, redo=redo, plot_analytical=plot_analytical, nolog=nolog, plot_front=plot_front, front_lb=front_lb, front_ub=front_ub)
+    def create_density_video(self, output_filename="density_evolution", fps=10, vmin=None, vmax=None, cmap="viridis", redo=False, plot_analytical=False, plot_eff=False, nolog=False, plot_front=False, front_lb=0.01, front_ub=0.99):
+        density_plot_paths = self.create_density_plots(vmin=vmin, vmax=vmax, cmap=cmap, redo=redo, plot_analytical=plot_analytical, plot_eff=plot_eff, nolog=nolog, plot_front=plot_front, front_lb=front_lb, front_ub=front_ub)
         create_movie(density_plot_paths, self.outdir, output_filename, framerate=fps)
 
-    def create_temperature_video(self, output_filename="temperature_evolution", fps=10, vmin=None, vmax=None, cmap="viridis", redo=False, plot_analytical=False, nolog=False, plot_front=False, front_lb=0.01, front_ub=0.99):
-        temperature_plot_paths = self.create_temperature_plots(vmin=vmin, vmax=vmax, cmap=cmap, redo=redo, plot_analytical=plot_analytical, nolog=nolog, plot_front=plot_front, front_lb=front_lb, front_ub=front_ub)
+    def create_temperature_video(self, output_filename="temperature_evolution", fps=10, vmin=None, vmax=None, cmap="viridis", redo=False, plot_analytical=False, plot_eff=False, nolog=False, plot_front=False, front_lb=0.01, front_ub=0.99):
+        temperature_plot_paths = self.create_temperature_plots(vmin=vmin, vmax=vmax, cmap=cmap, redo=redo, plot_analytical=plot_analytical, plot_eff=plot_eff, nolog=nolog, plot_front=plot_front, front_lb=front_lb, front_ub=front_ub)
         create_movie(temperature_plot_paths, self.outdir, output_filename, framerate=fps)
 
-    def create_velocity_video(self, output_filename="velocity_evolution", fps=10, vmin=None, vmax=None, cmap="viridis", redo=False, plot_analytical=False, nolog=False, plot_front=False, front_lb=0.01, front_ub=0.99):
-        velocity_plot_paths = self.create_velocity_plots(vmin=vmin, vmax=vmax, cmap=cmap, redo=redo, plot_analytical=plot_analytical, nolog=nolog, plot_front=plot_front, front_lb=front_lb, front_ub=front_ub)
+    def create_velocity_video(self, output_filename="velocity_evolution", fps=10, vmin=None, vmax=None, cmap="viridis", redo=False, plot_analytical=False, plot_eff=False, nolog=False, plot_front=False, front_lb=0.01, front_ub=0.99):
+        velocity_plot_paths = self.create_velocity_plots(vmin=vmin, vmax=vmax, cmap=cmap, redo=redo, plot_analytical=plot_analytical, plot_eff=plot_eff, nolog=nolog, plot_front=plot_front, front_lb=front_lb, front_ub=front_ub)
         create_movie(velocity_plot_paths, self.outdir, output_filename, framerate=fps)
 
-    def create_cs_video(self, output_filename="cs_evolution", fps=10, vmin=None, vmax=None, cmap="viridis", redo=False, plot_analytical=False, nolog=False, plot_front=False, front_lb=0.01, front_ub=0.99):
-        cs_plot_paths = self.create_cs_plots(vmin=vmin, vmax=vmax, cmap=cmap, redo=redo, plot_analytical=plot_analytical, nolog=nolog, plot_front=plot_front, front_lb=front_lb, front_ub=front_ub)
+    def create_cs_video(self, output_filename="cs_evolution", fps=10, vmin=None, vmax=None, cmap="viridis", redo=False, plot_analytical=False, plot_eff=False, nolog=False, plot_front=False, front_lb=0.01, front_ub=0.99):
+        cs_plot_paths = self.create_cs_plots(vmin=vmin, vmax=vmax, cmap=cmap, redo=redo, plot_analytical=plot_analytical, plot_eff=plot_eff, nolog=nolog, plot_front=plot_front, front_lb=front_lb, front_ub=front_ub)
         create_movie(cs_plot_paths, self.outdir, output_filename, framerate=fps)
 
-    def create_pressure_video(self, output_filename="pressure_evolution", fps=10, vmin=None, vmax=None, cmap="viridis", redo=False, plot_analytical=False, nolog=False, plot_front=False, front_lb=0.01, front_ub=0.99):
-        pressure_plot_paths = self.create_pressure_plots(vmin=vmin, vmax=vmax, cmap=cmap, redo=redo, plot_analytical=plot_analytical, nolog=nolog, plot_front=plot_front, front_lb=front_lb, front_ub=front_ub)
+    def create_pressure_video(self, output_filename="pressure_evolution", fps=10, vmin=None, vmax=None, cmap="viridis", redo=False, plot_analytical=False, plot_eff=False, nolog=False, plot_front=False, front_lb=0.01, front_ub=0.99):
+        pressure_plot_paths = self.create_pressure_plots(vmin=vmin, vmax=vmax, cmap=cmap, redo=redo, plot_analytical=plot_analytical, plot_eff=plot_eff, nolog=nolog, plot_front=plot_front, front_lb=front_lb, front_ub=front_ub)
         create_movie(pressure_plot_paths, self.outdir, output_filename, framerate=fps)
 
     def get_normalized_effective_radius_history(self, lb=0.01, ub=0.99):
@@ -258,7 +258,7 @@ class StromgrenSphere:
             fig, ax = pl.subplots()
         t_arr, r_effective, r_analytical = self.get_effective_radius_history()
         t_rec = self.analytical.t_rec if self.analytical is not None else 1
-        ax.plot(t_arr/t_rec, r_effective, label=label)
+        ax.scatter(t_arr/t_rec, r_effective, label=label)
         if plot_analytical and r_analytical is not None:
             ax.plot(t_arr/t_rec, r_analytical.to('pc').value, color='black', linestyle="--")
         if self.analytical is not None:
@@ -297,5 +297,5 @@ class StromgrenSphere:
             m_in_sphere: Mass in sphere array in solar masses
         """
         t_arr = np.array(self.time_list) * u.s
-        m_in_sphere = np.array([snapshot.get_mass_in_sphere() for snapshot in self.snapshot_list]) * u.Msun
+        m_in_sphere = np.array([snapshot.get_mass_in_sphere().value for snapshot in self.snapshot_list]) * u.g
         return t_arr, m_in_sphere
