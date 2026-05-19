@@ -52,7 +52,6 @@ def temperature(field, data):
     # Sum of number fractions weighted by degrees of freedom
     n_total = n_HI + n_HII + n_e
     sum_n_f_over_2 = (n_HI * (1 / (gamma_HI - 1)) + n_HII * (1 / (gamma_HII - 1)) + n_e * (1 / (gamma_e - 1)))
-    sum_n_f_over_2 /= n_total
 
     # Calculate temperature
     temp = e_int / (Constants.k_B * sum_n_f_over_2)
