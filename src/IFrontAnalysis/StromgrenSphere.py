@@ -258,7 +258,7 @@ class StromgrenSphere:
             fig, ax = pl.subplots()
         t_arr, r_effective, r_analytical = self.get_effective_radius_history()
         t_rec = self.analytical.t_rec if self.analytical is not None else 1
-        ax.scatter(t_arr/t_rec, r_effective, label=label)
+        ax.plot(t_arr/t_rec, r_effective, label=label)
         if plot_analytical and r_analytical is not None:
             ax.plot(t_arr/t_rec, r_analytical.to('pc').value, color='black', linestyle="--")
         if self.analytical is not None:
