@@ -2,7 +2,7 @@ import numpy as np
 from scipy.integrate import solve_ivp
 import astropy.units as u
 
-class StromgrenAnalytical:
+class StromgrenSphereAnalytical:
     def __init__(self, Q, n_H, alpha_B):
         self.Q = Q
         self.n_H = n_H
@@ -10,6 +10,11 @@ class StromgrenAnalytical:
         self.r_s = (3 * Q / (4 * np.pi * alpha_B * n_H**2))**(1/3)
         self.V_s = self.r_s**3 * (4/3) * np.pi
         self.t_rec = 1 / (alpha_B * n_H)
+        # Generic aliases used by IonizationFrontSnapshot / IonizationFront
+        self.r_char = self.r_s
+        self.t_char = self.t_rec
+        self.t_char_label = r"$t_{\rm rec}$"
+        self.r_char_label = r"$r_{\rm S}$"
 
     def get_analytical_radius_history_causal(self, t_array):
         def rhs(t, R, Q, n_H):
