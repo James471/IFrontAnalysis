@@ -5,3 +5,5 @@ class Constants:
     m_HI = m_p + m_e
     m_HII = m_p
     k_B = 1.3806488e-16
+    c = 2.99792458e10
+    ev2erg = 1.602176634e-12

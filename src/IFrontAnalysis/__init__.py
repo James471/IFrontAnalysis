@@ -1,5 +1,6 @@
 from .IonizationFront import IonizationFront
 from .IonizationFrontSnapshot import IonizationFrontSnapshot
+from .IonizationFrontFromCSV import IonizationFrontFromCSV
 from .StromgrenSphereAnalytical import StromgrenSphereAnalytical
 from .DTypeAnalytical import DTypeAnalytical
 
