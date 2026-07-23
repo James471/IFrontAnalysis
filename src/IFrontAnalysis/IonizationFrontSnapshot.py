@@ -1,4 +1,8 @@
 import os
+
+import matplotlib
+matplotlib.use("Agg")  # non-interactive backend: safe in spawned worker processes
+
 import numpy as np
 import yt
 from astropy import units as u
@@ -24,6 +28,9 @@ _FIELD_UNITS = {
     "v_z":         "cm s$^{-1}$",
     "velocity":    "cm s$^{-1}$",
     "gasDensity":  "g cm$^{-3}$",
+    "E_IR":        "erg cm$^{-3}$",
+    "E_optical":   "erg cm$^{-3}$",
+    "E_ion":       "erg cm$^{-3}$",
 }
 
 # ── derived field functions ──────────────────────────────────────────────────
@@ -40,6 +47,15 @@ def HII_density(field, data):
 def photon_density(field, data):
     avg_freq = (3.29e15 + 1.50e16) / 2
     return data['radEnergy-Group0'] / (Constants.hplanck * avg_freq)
+
+def E_IR(field, data):
+    return data['radEnergy-Group0']
+
+def E_optical(field, data):
+    return data['radEnergy-Group1']
+
+def E_ion(field, data):
+    return data['radEnergy-Group2']
 
 def x_HI(field, data):
     n_HI  = data['scalar_1'] / Constants.m_HI
@@ -95,11 +111,17 @@ class IonizationFrontSnapshot:
         self.path = path
         self.analytical = analytical
         self.ds = yt.load(path)
-        for name, fn in [
+        # radEnergy-Group1/2 only exist in multi-group (e.g. DTypeFrontMG)
+        # plotfiles. Registering E_optical/E_ion against a single-group plotfile
+        # makes yt raise YTFieldNotFound as soon as any field is touched, so gate
+        # those two derived fields on the groups actually being present.
+        raw_fields = {f[1] for f in self.ds.field_list}
+        derived_fields = [
             ("n_e",       e_density),
             ("n_HI",      HI_density),
             ("n_HII",     HII_density),
             ("n_photon",  photon_density),
+            ("E_IR",      E_IR),
             ("x_HI",      x_HI),
             ("temperature", temperature),
             ("v_x",       v_x),
@@ -108,12 +130,21 @@ class IonizationFrontSnapshot:
             ("velocity",  velocity_magnitude),
             ("cs",        cs),
             ("pressure",  pressure),
-        ]:
+        ]
+        if "radEnergy-Group1" in raw_fields:
+            derived_fields.append(("E_optical", E_optical))
+        if "radEnergy-Group2" in raw_fields:
+            derived_fields.append(("E_ion", E_ion))
+        for name, fn in derived_fields:
             self.ds.add_field(("boxlib", name), function=fn,
                               units="dimensionless", sampling_type="cell")
         self.ad = self.ds.all_data()
         self.outdir = outdir if outdir is not None else os.path.join(path, "plots")
         os.makedirs(self.outdir, exist_ok=True)
+        # Cache of (min, max) per field. Deriving a field over all_data() is
+        # expensive and the range is needed by both the global-range scan and the
+        # slice plot, so memoise it to avoid re-deriving the same field twice.
+        self._range_cache = {}
 
     # ── analysis helpers ─────────────────────────────────────────────────────
 
@@ -128,8 +159,13 @@ class IonizationFrontSnapshot:
                 np.percentile(r_masked, 84).to('pc'))
 
     def get_quantity_range(self, field_name):
+        cached = self._range_cache.get(field_name)
+        if cached is not None:
+            return cached
         field_data = self.ad[field_name]
-        return np.min(field_data), np.max(field_data)
+        rng = (np.min(field_data), np.max(field_data))
+        self._range_cache[field_name] = rng
+        return rng
 
     def get_effective_radius(self):
         total_volume = np.sum(self.ad['cell_volume'] * (1 - self.ad['x_HI']))
@@ -147,7 +183,8 @@ class IonizationFrontSnapshot:
 
     def create_quantity_map(self, field_name, vmin=None, vmax=None, cmap="viridis",
                             redo=False, plot_analytical=False, plot_eff=False,
-                            nolog=False, plot_front=False, front_lb=0.01, front_ub=0.99):
+                            nolog=False, plot_front=False, front_lb=0.01, front_ub=0.99,
+                            save_pdf=True):
         outpath = os.path.join(self.outdir, f"{field_name}.png")
         if os.path.exists(outpath) and not redo:
             return outpath
@@ -201,7 +238,8 @@ class IonizationFrontSnapshot:
                                  circle_args={"color": "blue", "linewidth": 2})
         plot.save(outpath)
         print(f"Saved: {outpath}")
-        pdfpath = outpath.replace(".png", ".pdf")
-        plot.save(pdfpath)
-        print(f"Saved: {pdfpath}")
+        if save_pdf:
+            pdfpath = outpath.replace(".png", ".pdf")
+            plot.save(pdfpath)
+            print(f"Saved: {pdfpath}")
         return outpath

@@ -1,11 +1,13 @@
 import os
 import re
+
 import numpy as np
 import matplotlib.pyplot as pl
 from astropy import units as u
 
 from .util import create_movie
 from .IonizationFrontSnapshot import IonizationFrontSnapshot
+
 
 # Maps field_name -> default video output filename
 _FIELD_VIDEO_NAMES = {
@@ -19,17 +21,25 @@ _FIELD_VIDEO_NAMES = {
     "velocity":    "velocity_evolution",
     "cs":          "cs_evolution",
     "pressure":    "pressure_evolution",
+    "E_IR":        "E_IR_evolution",
+    "E_optical":   "E_optical_evolution",
+    "E_ion":       "E_ion_evolution",
 }
 
 
 class IonizationFront:
-    def __init__(self, path, outdir=None, start_pattern="plt", ending_number=None, step=1, analytical=None):
+    def __init__(self, path, outdir=None, start_pattern="plt", ending_number=None, step=1,
+                 analytical=None, save_pdf=True):
         self.path = path
         self.outdir = outdir
         self.start_pattern = start_pattern
         self.ending_number = ending_number
         self.step = step
         self.analytical = analytical
+        # Whether field maps are also written as PDF alongside PNG. PDFs double the
+        # render time and are wasted for video frames, so the driver disables them
+        # for the whole-directory (map/video) workflow.
+        self.save_pdf = save_pdf
         if self.outdir is None:
             self.outdir = os.path.join(self.path, "Plots")
         os.makedirs(self.outdir, exist_ok=True)
@@ -64,17 +74,15 @@ class IonizationFront:
     # ── quantity maps & videos ───────────────────────────────────────────────
 
     def get_quantity_range(self, field_name):
-        vmin = vmax = None
+        los, his = [], []
         for snapshot in self.snapshot_list:
             lo, hi = snapshot.get_quantity_range(field_name)
-            if vmin is None:
-                vmin, vmax = lo, hi
-            else:
-                if lo is not None:
-                    vmin = min(vmin, lo)
-                if hi is not None:
-                    vmax = max(vmax, hi)
-        return vmin, vmax
+            if lo is not None:
+                los.append(lo)
+            if hi is not None:
+                his.append(hi)
+        return (min(los) if los else None,
+                max(his) if his else None)
 
     def create_quantity_plots(self, field_name, vmin=None, vmax=None, cmap="viridis",
                               redo=False, plot_analytical=False, plot_eff=False,
@@ -85,7 +93,8 @@ class IonizationFront:
         return [s.create_quantity_map(field_name, vmin=vmin, vmax=vmax, cmap=cmap, redo=redo,
                                       plot_analytical=plot_analytical, plot_eff=plot_eff,
                                       nolog=nolog, plot_front=plot_front,
-                                      front_lb=front_lb, front_ub=front_ub)
+                                      front_lb=front_lb, front_ub=front_ub,
+                                      save_pdf=self.save_pdf)
                 for s in self.snapshot_list]
 
     def create_quantity_video(self, field_name, output_filename=None, fps=10,
