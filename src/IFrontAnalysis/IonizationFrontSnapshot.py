@@ -11,6 +11,11 @@ from .Constants import Constants
 _TEXT_ARGS = {"color": "white", "fontsize": 14}
 _INSET_BOX_ARGS = {"boxstyle": "round,pad=0.3", "facecolor": "black", "alpha": 0.8, "edgecolor": "none"}
 
+# Signed fields (can be negative), plotted with a symlog colorbar and a
+# diverging colormap centered on zero instead of the default log/linear
+# handling used for the (always non-negative) fields.
+_SIGNED_FIELDS = {"v_x", "v_y", "v_z"}
+
 # Physical units of each plotted field. The field functions return raw cgs
 # values (yt registers them as "dimensionless"), so these strings describe the
 # quantity actually plotted. Fields absent from this map are genuinely
@@ -193,17 +198,29 @@ class IonizationFrontSnapshot:
         center[2] = self.ds.domain_left_edge[2] + 0.5 * self.ds.index.get_smallest_dx()
         plot = yt.SlicePlot(self.ds, "z", field_name, center=center)
 
-        # Fall back to linear scale when the field has no positive dynamic range
-        # (e.g. velocity is identically zero in the first frames of a D-type
-        # front). A log/symlog norm would otherwise raise "No finite data
-        # points." once yt masks out the non-positive values.
         fmin, fmax = self.get_quantity_range(field_name)
-        force_linear = nolog or not (float(fmax) > 0.0 and float(fmin) < float(fmax))
-
         plot.set_zlim(field_name, zmin=vmin or 'min', zmax=vmax or 'max')
-        if force_linear:
-            plot.set_log(field_name, False)
-        plot.set_cmap(field_name, cmap)
+
+        if field_name in _SIGNED_FIELDS:
+            # v_x/v_y/v_z can be negative, so a plain log norm is meaningless.
+            # Use symlog (linear near zero, log beyond a threshold) unless the
+            # field is identically zero, and default to a diverging colormap
+            # centered on zero so the sign is visually apparent.
+            degenerate = float(fmin) == float(fmax)
+            if nolog or degenerate:
+                plot.set_log(field_name, False)
+            else:
+                plot.set_log(field_name, linthresh="auto")
+            plot.set_cmap(field_name, "coolwarm" if cmap == "viridis" else cmap)
+        else:
+            # Fall back to linear scale when the field has no positive dynamic
+            # range (e.g. velocity is identically zero in the first frames of a
+            # D-type front). A log norm would otherwise raise "No finite data
+            # points." once yt masks out the non-positive values.
+            force_linear = nolog or not (float(fmax) > 0.0 and float(fmin) < float(fmax))
+            if force_linear:
+                plot.set_log(field_name, False)
+            plot.set_cmap(field_name, cmap)
         unit = _FIELD_UNITS.get(field_name)
         label = f"{field_name} [{unit}]" if unit else field_name
         plot.set_colorbar_label(field_name, label)
