@@ -7,6 +7,25 @@ from .Constants import Constants
 _TEXT_ARGS = {"color": "white", "fontsize": 14}
 _INSET_BOX_ARGS = {"boxstyle": "round,pad=0.3", "facecolor": "black", "alpha": 0.8, "edgecolor": "none"}
 
+# Physical units of each plotted field. The field functions return raw cgs
+# values (yt registers them as "dimensionless"), so these strings describe the
+# quantity actually plotted. Fields absent from this map are genuinely
+# dimensionless (e.g. x_HI) and get no unit appended to the colorbar label.
+_FIELD_UNITS = {
+    "n_e":         "cm$^{-3}$",
+    "n_HI":        "cm$^{-3}$",
+    "n_HII":       "cm$^{-3}$",
+    "n_photon":    "cm$^{-3}$",
+    "temperature": "K",
+    "pressure":    "dyn cm$^{-2}$",
+    "cs":          "cm s$^{-1}$",
+    "v_x":         "cm s$^{-1}$",
+    "v_y":         "cm s$^{-1}$",
+    "v_z":         "cm s$^{-1}$",
+    "velocity":    "cm s$^{-1}$",
+    "gasDensity":  "g cm$^{-3}$",
+}
+
 # ── derived field functions ──────────────────────────────────────────────────
 
 def e_density(field, data):
@@ -148,7 +167,9 @@ class IonizationFrontSnapshot:
         if force_linear:
             plot.set_log(field_name, False)
         plot.set_cmap(field_name, cmap)
-        plot.set_colorbar_label(field_name, field_name)
+        unit = _FIELD_UNITS.get(field_name)
+        label = f"{field_name} [{unit}]" if unit else field_name
+        plot.set_colorbar_label(field_name, label)
 
         time = self.ds.current_time.to("s").value
         if self.analytical:
