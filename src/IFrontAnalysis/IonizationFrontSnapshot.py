@@ -136,8 +136,16 @@ class IonizationFrontSnapshot:
         center = self.ds.domain_center.copy()
         center[2] = self.ds.domain_left_edge[2] + 0.5 * self.ds.index.get_smallest_dx()
         plot = yt.SlicePlot(self.ds, "z", field_name, center=center)
+
+        # Fall back to linear scale when the field has no positive dynamic range
+        # (e.g. velocity is identically zero in the first frames of a D-type
+        # front). A log/symlog norm would otherwise raise "No finite data
+        # points." once yt masks out the non-positive values.
+        fmin, fmax = self.get_quantity_range(field_name)
+        force_linear = nolog or not (float(fmax) > 0.0 and float(fmin) < float(fmax))
+
         plot.set_zlim(field_name, zmin=vmin or 'min', zmax=vmax or 'max')
-        if nolog:
+        if force_linear:
             plot.set_log(field_name, False)
         plot.set_cmap(field_name, cmap)
         plot.set_colorbar_label(field_name, field_name)
