@@ -137,7 +137,11 @@ class IonizationFront:
 
     def get_effective_radius_history(self):
         t_arr        = np.array(self.time_list) * u.s
-        r_effective  = u.Quantity([s.get_effective_radius() for s in self.snapshot_list])
+        # s.get_effective_radius() returns a unyt_quantity; astropy's Quantity([...])
+        # silently drops units when wrapping a list of those, so convert to plain
+        # floats in pc first.
+        r_effective  = np.array([float(s.get_effective_radius().to('pc').value)
+                                 for s in self.snapshot_list]) * u.pc
         r_analytical = (self.analytical.get_analytical_radius_history_causal(t_arr)
                         if self.analytical is not None else None)
         return t_arr, r_effective, r_analytical
@@ -175,6 +179,44 @@ class IonizationFront:
         ax.set_ylabel(r"$r_{\rm eff}$ (pc)")
         return fig, ax
 
+    def plot_analytical_comparison_history(self, fig=None, ax=None):
+        """Plot the numerical effective radius alongside all three analytical
+        D-type front solutions (pure Spitzer, Krumholz & Matzner 2009 radiation
+        pressure, and KM09 with the multi-group r_ch boost), all vs. time in
+        seconds since Spitzer's t_s and KM09's t_ch are different normalisations
+        and cannot share a single dimensionless x-axis.
+
+        Requires self.analytical to be a DTypeAnalytical instance (used as the
+        source of Q, n_H, and optical_to_ionizing_fraction for the three curves).
+        """
+        if self.analytical is None:
+            raise ValueError("Analytical solution is required to plot the analytical comparison history")
+        from .DTypeAnalytical import DTypeAnalytical
+
+        if fig is None:
+            fig, ax = pl.subplots()
+        t_arr, r_effective, _ = self.get_effective_radius_history()
+        t_s_val = t_arr.to(u.s).value
+
+        Q, n_H = self.analytical.Q, self.analytical.n_H
+        f_opt  = self.analytical.optical_to_ionizing_fraction
+        spitzer   = DTypeAnalytical(Q, n_H, radiation_pressure=False)
+        km09      = DTypeAnalytical(Q, n_H, radiation_pressure=True, mg=False)
+        km09_mg   = DTypeAnalytical(Q, n_H, radiation_pressure=True, mg=True,
+                                     optical_to_ionizing_fraction=f_opt)
+
+        ax.plot(t_s_val, r_effective.to('pc').value, label=r"$r_{\rm eff}$ (numerical)")
+        ax.plot(t_s_val, spitzer.get_spitzer_radius_history(t_arr).to('pc').value,
+               color='black', linestyle="--", label="Spitzer")
+        ax.plot(t_s_val, km09.get_radpres_radius_history(t_arr).to('pc').value,
+               color='tab:red', linestyle=":", label="KM09")
+        ax.plot(t_s_val, km09_mg.get_radpres_radius_history(t_arr).to('pc').value,
+               color='tab:purple', linestyle="-.", label="KM09 (mg)")
+        ax.set_xlabel("Time (s)")
+        ax.set_ylabel("Radius (pc)")
+        ax.legend()
+        return fig, ax
+
     def get_effective_radius_error_history(self):
         if self.analytical is None:
             raise ValueError("Analytical solution is required to compute the effective radius error history")
@@ -202,3 +244,27 @@ class IonizationFront:
         t_arr       = np.array(self.time_list) * u.s
         m_in_sphere = np.array([s.get_mass_in_sphere().value for s in self.snapshot_list]) * u.g
         return t_arr, m_in_sphere
+
+    # ── max velocity history ─────────────────────────────────────────────────
+
+    def get_max_velocity_history(self):
+        t_arr   = np.array(self.time_list) * u.s
+        v_max   = np.array([float(s.get_quantity_range("velocity")[1])
+                            for s in self.snapshot_list]) * (u.cm / u.s)
+        return t_arr, v_max
+
+    def plot_max_velocity_history(self, nolog=False, fig=None, ax=None, label=None):
+        if fig is None:
+            fig, ax = pl.subplots()
+        t_arr, v_max = self.get_max_velocity_history()
+        if self.analytical is not None:
+            t_norm = t_arr / self._t_char_s()
+            ax.set_xlabel(rf"$t / ${self.analytical.t_char_label}")
+        else:
+            t_norm = t_arr
+            ax.set_xlabel("Time (s)")
+        ax.plot(t_norm, v_max, label=label)
+        if not nolog:
+            ax.set_yscale("log")
+        ax.set_ylabel(r"Max velocity (cm s$^{-1}$)")
+        return fig, ax

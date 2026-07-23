@@ -108,6 +108,39 @@ class IonizationFrontFromCSV:
         ax.set_ylabel(r"$r_{\rm eff}$ (pc)")
         return fig, ax
 
+    def plot_analytical_comparison_history(self, fig=None, ax=None):
+        """Plot the numerical effective radius alongside all three analytical
+        D-type front solutions (pure Spitzer, Krumholz & Matzner 2009 radiation
+        pressure, and KM09 with the multi-group r_ch boost), all vs. time in
+        seconds. See IonizationFront.plot_analytical_comparison_history.
+        """
+        if self.analytical is None:
+            raise ValueError("Analytical solution is required to plot the analytical comparison history")
+        from .DTypeAnalytical import DTypeAnalytical
+
+        if fig is None:
+            fig, ax = pl.subplots()
+
+        Q, n_H = self.analytical.Q, self.analytical.n_H
+        f_opt  = self.analytical.optical_to_ionizing_fraction
+        spitzer = DTypeAnalytical(Q, n_H, radiation_pressure=False)
+        km09    = DTypeAnalytical(Q, n_H, radiation_pressure=True, mg=False)
+        km09_mg = DTypeAnalytical(Q, n_H, radiation_pressure=True, mg=True,
+                                   optical_to_ionizing_fraction=f_opt)
+
+        t_s_val = self.t_arr.to(u.s).value
+        ax.plot(t_s_val, self.r_effective.to('pc').value, label=r"$r_{\rm eff}$ (numerical)")
+        ax.plot(t_s_val, spitzer.get_spitzer_radius_history(self.t_arr).to('pc').value,
+               color='black', linestyle="--", label="Spitzer")
+        ax.plot(t_s_val, km09.get_radpres_radius_history(self.t_arr).to('pc').value,
+               color='tab:red', linestyle=":", label="KM09")
+        ax.plot(t_s_val, km09_mg.get_radpres_radius_history(self.t_arr).to('pc').value,
+               color='tab:purple', linestyle="-.", label="KM09 (mg)")
+        ax.set_xlabel("Time (s)")
+        ax.set_ylabel("Radius (pc)")
+        ax.legend()
+        return fig, ax
+
     def get_effective_radius_error_history(self):
         t_arr, r_effective, r_analytical = self.get_effective_radius_history()
         t_hat = t_arr / self._t_char_s()

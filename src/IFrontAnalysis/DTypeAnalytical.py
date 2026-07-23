@@ -50,30 +50,44 @@ class DTypeAnalytical:
     Radiation-pressure option (radiation_pressure=True): the combined radiation +
     gas-pressure front radius (their Eq. 13) is
 
-        R(t) = ( R_rad(t)^p + R_spitzer(t)^p )^(1/p),   p = (7 - k_rho)/2,
+        R(t) = r_ch * ( x_rad(tau)^p + x_gas(tau)^p )^(1/p),   p = (7 - k_rho)/2,
 
-    where R_spitzer(t) is the Spitzer solution above and R_rad(t) is the pure
-    radiation-pressure momentum-driven solution (their Eq. 11, embedded/spherical
-    case, dimensional form). The shell momentum equals the radiant momentum,
-    M_sh * Rdot = f_trap * L * t / c, with M_sh = (4/3) pi rho0 R^3 (k_rho = 0);
-    integrating with R(0) = 0 gives the closed form
+    with tau = t / t_ch and, for k_rho = 0 (uniform ambient medium),
 
-        R_rad(t) = [ 3 * f_trap * L / (2 pi c rho0) ]^(1/4) * sqrt(t),
+        x_rad(tau) = (2 tau^2)^(1/4)
+        x_gas(tau) = (49/36 tau^2)^(2/7)
 
-    with bolometric luminosity L = psi * Q * eps0 (eps0 = 13.6 eV) and ambient mass
-    density rho0 = mu_amb * m_p * n_H. This dimensional form requires no paper-fiducial
-    constants (alpha_B, T_II, phi) beyond alpha_B(T_eq) already used for the Spitzer
-    limb, so R_rad and R_spitzer combine on a common footing: the combined curve
-    reduces EXACTLY to the Spitzer curve as t -> infinity and to the pure radiation
-    solution as t -> 0. This mirrors the implementation in
-    src/problems/DTypeFrontRadPres/testDTypeFrontRadPres.cpp.
+    r_ch and t_ch are KM09's own characteristic radiation-pressure scales (their
+    Eq. 9), NOT r_s/t_s. x_gas is the LATE-TIME ASYMPTOTE of the Spitzer solution
+    (i.e. r_s * (7t / 4t_s)^(4/7), dropping the "1 +" term) expressed in units of
+    r_ch -- it is NOT the full Spitzer solution get_spitzer_radius_history returns.
+    Using the full "1 + 7t/4ts" Spitzer term here would double-count the initial
+    R-type/transient growth already encoded in x_rad and break the exact reduction
+    to the KM09 gas-pressure limit as t -> infinity. This mirrors the implementation
+    in src/problems/DTypeFront/testDTypeFront.cpp (computeAfterTimestep), which does
+    not expose f_trap, psi, or mu_amb: the ambient mass density feeding t_ch is
+    n_H * m_HI (pure atomic hydrogen, no mean-molecular-weight factor) and the
+    bolometric luminosity is fixed to the ionizing photon luminosity; this class
+    matches that.
 
-    f_trap = 1 (direct ionizing radiation pressure only) is the physically consistent
-    default for simulations that deposit only the momentum of absorbed ionizing
-    photons (the paper's Table/figures use the fiducial f_trap = 2).
+    Multi-group option (mg=True): boosts r_ch and t_ch to account for the extra
+    momentum deposited by the reprocessed optical band in testDTypeFrontMG.cpp
+    (SetRadEnergySource), which injects L_star_optical = optical_to_ionizing_fraction
+    * L_star_ion alongside the ionizing luminosity L_star_ion = Q1 * e1. Writing
+    Q2 * e2 = L_star_optical, the ratio Q2*e2 / (Q1*e1) = optical_to_ionizing_fraction, so
+
+        r_ch(mg) = r_ch * (1 + Q2*e2 / (Q1*e1))^2
+                 = r_ch * (1 + optical_to_ionizing_fraction)^2
+        t_ch(mg) = t_ch / sqrt(1 + Q2*e2 / (Q1*e1))
+                 = t_ch / sqrt(1 + optical_to_ionizing_fraction),
+
+    where r_ch and t_ch on the right are the plain (non-mg) values computed from
+    Q1, e1 alone (t_ch is NOT simply re-derived from the boosted r_ch via KM09's
+    Eq. 9 relation -- that would apply the r_ch^4 boost to t_ch too, which is a
+    different, much larger correction than the explicit factor above).
     """
 
-    def __init__(self, Q, n_H, radiation_pressure=False, f_trap=1.0, psi=1.0, mu_amb=1.4):
+    def __init__(self, Q, n_H, radiation_pressure=False, mg=False, optical_to_ionizing_fraction=0.1):
         """
         Parameters:
             Q:      Ionizing photon rate (s^-1), dimensionless float in CGS
@@ -81,19 +95,18 @@ class DTypeAnalytical:
             radiation_pressure: if True, get_analytical_radius_history_causal returns
                     the Krumholz & Matzner (2009) combined radiation + gas-pressure
                     solution instead of the pure Spitzer solution.
-            f_trap: radiation trapping factor (see class docstring). Default 1.0
-                    (direct ionizing momentum only).
-            psi:    ratio of bolometric to ionizing power, L = psi * Q * eps0.
-                    Default 1.0 (luminosity comes entirely from ionizing photons).
-            mu_amb: atomic mass per H nucleus of the ambient neutral gas. Default 1.4
-                    (standard cosmic composition).
+            mg:     if True, boost r_ch for the extra momentum deposited by the
+                    reprocessed optical band (see class docstring). Only affects
+                    the radiation-pressure solution.
+            optical_to_ionizing_fraction: L_star_optical / L_star_ion, as set by
+                    stromgen.optical_to_ionizing_fraction in testDTypeFrontMG.cpp.
+                    Only used when mg=True.
         """
         self.Q = Q
         self.n_H = n_H
         self.radiation_pressure = radiation_pressure
-        self.f_trap = f_trap
-        self.psi = psi
-        self.mu_amb = mu_amb
+        self.mg = mg
+        self.optical_to_ionizing_fraction = optical_to_ionizing_fraction
 
         # Equilibrium temperature in ionized cavity (n_e ≈ n_H for fully ionized H)
         self.T_eq = _compute_equilibrium_temperature_ionized(n_H)
@@ -118,25 +131,24 @@ class DTypeAnalytical:
 
         # Radiation-pressure quantities (Krumholz & Matzner 2009), computed regardless of
         # radiation_pressure so callers can inspect them (e.g. via get_radpres_radius_history).
-        eps0 = 13.6 * Constants.ev2erg
-        self.L = self.psi * Q * eps0
-        self.rho0 = self.mu_amb * Constants.m_p * n_H
+        # eps is the mean photon energy of the ionizing band (matches
+        # RadSystem::GetChemBandQuanta(0) in testDTypeFront.cpp).
+        avg_freq = (3.29e15 + 1.50e16) / 2.0
+        self.eps = Constants.hplanck * avg_freq
+        self.rho0 = n_H * Constants.m_HI
+
+        # KM09's own characteristic radiation-pressure scales (their Eq. 9), NOT r_s/t_s.
+        self.r_ch = (Q * self.eps**2 * self.alpha_B
+                     / (12.0 * np.pi * Constants.k_B**2 * self.T_eq**2 * Constants.c**2))
+        self.t_ch = np.sqrt(4.0 * np.pi * self.rho0 * self.r_ch**4 * Constants.c
+                             / (3.0 * Q * self.eps))
+        if self.mg:
+            self.r_ch = self.r_ch * (1.0 + self.optical_to_ionizing_fraction)**2
+            self.t_ch = self.t_ch / np.sqrt(1.0 + self.optical_to_ionizing_fraction)
 
     def _spitzer_radius_cm(self, t_s_val):
         """Spitzer gas-pressure radius in cm, given time array in seconds (plain floats)."""
         return self.r_s * np.power(1.0 + 7.0 * t_s_val / (4.0 * self.t_s), 4.0 / 7.0)
-
-    def _radpres_radius_cm(self, t_s_val):
-        """Pure radiation-pressure momentum-driven radius in cm (dimensional Eq. 11,
-        embedded, k_rho = 0), given time array in seconds (plain floats)."""
-        t_s_val = np.asarray(t_s_val, dtype=float)
-        R_rad = np.zeros_like(t_s_val)
-        positive = t_s_val > 0.0
-        R_rad[positive] = (
-            np.power(3.0 * self.f_trap * self.L / (2.0 * np.pi * Constants.c * self.rho0), 0.25)
-            * np.sqrt(t_s_val[positive])
-        )
-        return R_rad
 
     def get_spitzer_radius_history(self, t_array):
         """Return the pure Spitzer (gas-pressure) front radius at each time in t_array.
@@ -152,8 +164,14 @@ class DTypeAnalytical:
 
     def get_radpres_radius_history(self, t_array):
         """Return the Krumholz & Matzner (2009) combined radiation + gas-pressure front
-        radius at each time in t_array (their Eq. 13, dimensional, anchor-free form; see
-        class docstring).
+        radius at each time in t_array (their Eq. 13, k_rho = 0), exactly mirroring
+        testDTypeFront.cpp::computeAfterTimestep: tau = t / t_ch,
+        x_rad = (2 tau^2)^(1/4), x_gas = (49/36 tau^2)^(2/7),
+        R = r_ch * (x_rad^3.5 + x_gas^3.5)^(2/7).
+
+        Note x_gas is the LATE-TIME ASYMPTOTE of the Spitzer solution (no "1 +"
+        term), not get_spitzer_radius_history's full expression -- see class
+        docstring.
 
         Parameters:
             t_array: array with astropy time units
@@ -162,10 +180,12 @@ class DTypeAnalytical:
             Quantity array of radii in pc
         """
         t_s_val = t_array.to(u.s).value
-        R_rad_cm = self._radpres_radius_cm(t_s_val)
-        R_gas_cm = self._spitzer_radius_cm(t_s_val)
+        tau = t_s_val / self.t_ch
+        x_rad = np.power(2.0 * tau**2, 1.0 / 4.0)
+        x_gas = np.power(49.0 / 36.0 * tau**2, 2.0 / 7.0)
         p = 3.5  # (7 - k_rho) / 2, k_rho = 0
-        R_cm = np.power(np.power(R_rad_cm, p) + np.power(R_gas_cm, p), 1.0 / p)
+        x = np.power(np.power(x_rad, p) + np.power(x_gas, p), 2.0 / 7.0)
+        R_cm = self.r_ch * x
         return (R_cm * u.cm).to(u.pc)
 
     def get_analytical_radius_history_causal(self, t_array):
